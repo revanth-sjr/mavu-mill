@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>சக்தி எண்ணெய் மற்றும் மாவு ஆலை — Products</title>
+  <script>
+    // Quick guard using the token + cached role. The authoritative check
+    // (fresh role from the server) happens in products.js via /api/auth/me.
+    (function () {
+      var token = localStorage.getItem('mavu_token');
+      if (!token) { window.location.replace('login.html'); return; }
+      try {
+        var u = JSON.parse(localStorage.getItem('mavu_user') || 'null');
+        if (u && u.role && u.role !== 'admin') { window.location.replace('index.html'); }
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#products-main">Skip to content</a>
+
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="header-top">
+        <div>
+          <h1>சக்தி எண்ணெய் மற்றும் மாவு ஆலை</h1>
+          <p class="header-sub">Products / பொருட்கள்</p>
+        </div>
+        <span class="user-chip" id="userChip"></span>
+      </div>
+      <nav class="top-nav" aria-label="Primary">
+        <a class="nav-link" href="index.html">Billing</a>
+        <a class="nav-link" href="dashboard.html">Dashboard</a>
+        <a class="nav-link active" href="products.html" data-role-only="admin">Products</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="products-main" class="page-shell">
+
+    <div class="intro-bar">
+      <div>
+        <h2>Product & Price Management</h2>
+        <p>Add new products and update the current rate. Changes apply immediately on the Billing page.</p>
+      </div>
+      <div class="intro-badges">
+        <span class="badge">Admin Only</span>
+      </div>
+    </div>
+
+    <div class="billing-layout">
+
+      <!-- ADD PRODUCT FORM -->
+      <section class="card form-card" aria-labelledby="add-product-title">
+        <p class="card-title">New Product</p>
+        <h2 id="add-product-title" style="margin-bottom:1rem">Add Product / புதிய பொருள்</h2>
+
+        <form id="newProductForm" novalidate>
+          <div class="field-group">
+            <label for="newProductName">Product Name / பொருள் பெயர்</label>
+            <input id="newProductName" type="text" placeholder="e.g. கடுகு எண்ணெய்" autocomplete="off">
+          </div>
+
+          <div class="field-grid">
+            <div class="field-group">
+              <label for="newProductCategory">Category</label>
+              <select id="newProductCategory">
+                <option value="sales">Sales</option>
+                <option value="service">Service</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="newProductUnit">Unit / அலகு</label>
+              <select id="newProductUnit">
+                <option value="kg">kg</option>
+                <option value="liter">liter</option>
+                <option value="piece">piece</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label for="newProductRate">Current Price / விலை</label>
+            <input id="newProductRate" type="number" min="0" step="0.01" placeholder="0.00">
+          </div>
+
+          <button type="button" class="btn btn-primary" id="addProductBtn" style="width:100%;margin-top:0.4rem">
+            &#10003; Add Product
+          </button>
+          <p class="form-message" id="productFormMessage" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <!-- PRODUCT LIST -->
+      <section class="card" aria-labelledby="product-list-title">
+        <p class="card-title">Catalogue</p>
+        <h2 id="product-list-title" style="margin-bottom:1rem">Current Products</h2>
+
+        <p class="card-title" style="margin-bottom:0.4rem">Sales / விற்பனை</p>
+        <div id="salesProductList" class="list-stack" style="margin-bottom:1.1rem"></div>
+
+        <p class="card-title" style="margin-bottom:0.4rem">Service / அரவை கூலி</p>
+        <div id="serviceProductList" class="list-stack"></div>
+      </section>
+
+    </div>
+
+    <!-- TEAM ACCOUNTS -->
+    <div class="billing-layout" style="margin-top:1.1rem">
+      <section class="card form-card" aria-labelledby="add-account-title">
+        <p class="card-title">New Account</p>
+        <h2 id="add-account-title" style="margin-bottom:1rem">Add Team Account</h2>
+
+        <form id="newUserForm" novalidate>
+          <div class="field-group">
+            <label for="newUserName">Full Name</label>
+            <input id="newUserName" type="text" placeholder="e.g. Selvi" autocomplete="off">
+          </div>
+          <div class="field-grid">
+            <div class="field-group">
+              <label for="newUsername">Username</label>
+              <input id="newUsername" type="text" placeholder="e.g. selvi" autocomplete="off">
+            </div>
+            <div class="field-group">
+              <label for="newUserRole">Role</label>
+              <select id="newUserRole">
+                <option value="staff">Staff</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-group">
+            <label for="newUserPassword">Password (min 6 characters)</label>
+            <input id="newUserPassword" type="text" placeholder="Set a password" autocomplete="off">
+          </div>
+          <button type="button" class="btn btn-primary" id="addUserBtn" style="width:100%;margin-top:0.4rem">
+            &#10003; Add Account
+          </button>
+          <p class="form-message" id="userFormMessage" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section class="card" aria-labelledby="account-list-title">
+        <p class="card-title">Team</p>
+        <h2 id="account-list-title" style="margin-bottom:1rem">Accounts</h2>
+        <div id="userListBody" class="list-stack"></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="auth.js" defer></script>
+  <script src="products.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>சக்தி எண்ணெய் மற்றும் மாவு ஆலை — Billing</title>
+  <script>
+    // Quick guard: no token at all -> bounce immediately (avoids a flash
+    // of billing content). The authoritative check (is this token still
+    // valid? has the role changed?) happens in auth.js via /api/auth/me.
+    if (!localStorage.getItem('mavu_token')) {
+      window.location.replace('login.html');
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="header-top">
+        <div>
+          <h1>சக்தி எண்ணெய் மற்றும் மாவு ஆலை</h1>
+          <p class="header-sub">Billing / ரசீது தயாரிப்பு</p>
+        </div>
+        <span class="user-chip" id="userChip"></span>
+      </div>
+      <nav class="top-nav" aria-label="Primary">
+        <a class="nav-link active" href="index.html">Billing</a>
+        <a class="nav-link" href="dashboard.html">Dashboard</a>
+        <a class="nav-link" href="products.html" data-role-only="admin">Products</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="page-shell">
+    <div class="intro-bar print-hide">
+      <div>
+        <h2>Editable Rate Billing</h2>
+        <p>Select product, adjust rate, generate and print receipt.</p>
+      </div>
+      <div class="intro-badges">
+        <span class="badge">Tamil Friendly</span>
+        <span class="badge">Custom Rate</span>
+        <span class="badge">Auto-Save</span>
+      </div>
+    </div>
+
+    <div class="billing-layout">
+
+      <!-- FORM -->
+      <section class="card form-card print-hide" aria-labelledby="form-title">
+        <p class="card-title">Order Entry</p>
+        <h2 id="form-title" style="margin-bottom:1rem">Customer Bill / வாடிக்கையாளர் பில்</h2>
+
+        <form id="billingForm" novalidate>
+
+          <div class="field-group">
+            <label for="customerName">Customer Name / வாடிக்கையாளர் பெயர்</label>
+            <input id="customerName" type="text" placeholder="Enter customer name" autocomplete="off">
+          </div>
+
+          <div class="field-group">
+            <label for="productSelect">Product / பொருள்</label>
+            <select id="productSelect">
+              <option value="">Select product / பொருள் தேர்வு செய்யவும்</option>
+            </select>
+          </div>
+
+          <div class="field-grid">
+            <div class="field-group">
+              <label for="quantityInput">Quantity / அளவு</label>
+              <input id="quantityInput" type="number" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <div class="field-group">
+              <label for="unitDisplay">Unit / அலகு</label>
+              <input id="unitDisplay" type="text" value="-" readonly>
+            </div>
+          </div>
+
+          <div class="field-grid">
+            <div class="field-group">
+              <label for="rateInput">Rate / விலை</label>
+              <input id="rateInput" type="number" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <div class="field-group">
+              <label>Rate Status</label>
+              <div id="rateStatus" class="status-pill">Default Rate</div>
+            </div>
+          </div>
+
+          <div class="summary-box">
+            <div class="summary-row">
+              <span>Default Rate</span>
+              <strong id="defaultRateDisplay">&#8377;0.00</strong>
+            </div>
+            <div class="summary-row">
+              <span>Current Rate</span>
+              <strong id="currentRateDisplay">&#8377;0.00</strong>
+            </div>
+            <div class="summary-row total">
+              <span>Total / மொத்தம்</span>
+              <strong id="totalDisplay">&#8377;0.00</strong>
+            </div>
+          </div>
+
+          <!-- Track Customer Toggle -->
+          <label class="track-toggle" for="trackCustomer">
+            <input type="checkbox" id="trackCustomer" checked>
+            <span id="trackLabel">Track Customer (data will be saved to dashboard)</span>
+          </label>
+
+          <div class="action-row" style="margin-top:0.85rem">
+            <button type="button" class="btn btn-primary" id="generateReceiptBtn">
+              &#10003; Generate Receipt
+            </button>
+            <button type="button" class="btn btn-secondary" id="printReceiptBtn">
+              &#128438; Print / PDF
+            </button>
+          </div>
+
+          <p class="form-message" id="formMessage" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <!-- RECEIPT PREVIEW -->
+      <aside class="card receipt-card" aria-labelledby="receipt-title">
+        <p class="card-title print-hide">Receipt Preview</p>
+        <div class="receipt-panel" id="receiptPanel">
+          <div class="receipt-header">
+            <h2 id="receipt-title">சக்தி எண்ணெய் மற்றும் மாவு ஆலை</h2>
+            <p>Receipt / ரசீது</p>
+          </div>
+          <div class="receipt-body">
+            <div class="receipt-row"><span>Date &amp; Time</span><strong id="receiptDate">-</strong></div>
+            <div class="receipt-row"><span>Customer / வாடிக்கையாளர்</span><strong id="receiptCustomer">-</strong></div>
+            <div class="receipt-row"><span>Product / பொருள்</span><strong id="receiptProduct">-</strong></div>
+            <div class="receipt-row"><span>Quantity / அளவு</span><strong id="receiptQuantity">-</strong></div>
+            <div class="receipt-row"><span>Rate / விலை</span><strong id="receiptRate">-</strong></div>
+            <div class="receipt-row"><span>Rate Type</span><strong id="receiptRateType">-</strong></div>
+            <div class="receipt-row receipt-total"><span>Total / மொத்தம்</span><strong id="receiptTotal">-</strong></div>
+          </div>
+          <p class="receipt-note">Thank you / நன்றி &#128591;</p>
+        </div>
+      </aside>
+
+    </div>
+  </main>
+
+  <script src="auth.js" defer></script>
+  <script src="script.js" defer></script>
+</body>
+</html>

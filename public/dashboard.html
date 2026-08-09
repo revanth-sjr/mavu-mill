@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>சக்தி எண்ணெய் மற்றும் மாவு ஆலை — Dashboard</title>
+  <script>
+    if (!localStorage.getItem('mavu_token')) {
+      window.location.replace('login.html');
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#dashboard-main">Skip to content</a>
+
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="header-top">
+        <div>
+          <h1>சக்தி எண்ணெய் மற்றும் மாவு ஆலை</h1>
+          <p class="header-sub">Dashboard / சுருக்கம்</p>
+        </div>
+        <div class="header-top-right">
+          <span class="last-updated" id="lastUpdated"></span>
+          <span class="user-chip" id="userChip"></span>
+        </div>
+      </div>
+      <nav class="top-nav" aria-label="Primary">
+        <a class="nav-link" href="index.html">Billing</a>
+        <a class="nav-link active" href="dashboard.html">Dashboard</a>
+        <a class="nav-link" href="products.html" data-role-only="admin">Products</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="dashboard-main" class="page-shell">
+
+    <!-- Controls Bar -->
+    <div class="dash-controls">
+      <div class="filter-group">
+        <span class="filter-label">Period</span>
+        <button class="filter-btn active" data-period="today">Today</button>
+        <button class="filter-btn" data-period="month">This Month</button>
+        <button class="filter-btn" data-period="year">This Year</button>
+        <button class="filter-btn" data-period="all">All Time</button>
+      </div>
+      <div class="divider"></div>
+      <div class="filter-group">
+        <span class="filter-label">Sort</span>
+        <select class="sort-select" id="sortSelect">
+          <option value="recent">Most Recent</option>
+          <option value="oldest">Oldest First</option>
+          <option value="highest_qty">Highest Qty</option>
+          <option value="lowest_qty">Lowest Qty</option>
+          <option value="highest_total">Highest Total</option>
+        </select>
+      </div>
+      <div style="flex:1"></div>
+      <button class="filter-btn" id="refreshDashboardBtn" style="border-color:var(--green);color:var(--green)">&#8635; Refresh</button>
+      <a class="quick-new-btn" href="index.html">+ New Bill</a>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="stats-grid">
+      <div class="card stat-card accent-green">
+        <div class="stat-label">Total Earnings</div>
+        <div class="stat-val" id="statEarnings">&#8377;0.00</div>
+        <div class="stat-sub" id="statEarningSub"></div>
+      </div>
+      <div class="card stat-card accent-blue">
+        <div class="stat-label">Total Orders</div>
+        <div class="stat-val" id="statOrders">0</div>
+        <div class="stat-sub" id="statOrdersSub"></div>
+      </div>
+      <div class="card stat-card accent-orange">
+        <div class="stat-label">Total Quantity</div>
+        <div class="stat-val" id="statQty">0.00</div>
+        <div class="stat-sub" id="statQtySub"></div>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="dash-grid">
+
+      <!-- Top Products -->
+      <div class="section-card">
+        <div class="section-head">
+          <div class="section-head-left">
+            <p class="card-title">Products</p>
+            <h2>Top Selling Items</h2>
+          </div>
+        </div>
+        <div class="section-body">
+          <div id="topItemsList" class="list-stack"></div>
+        </div>
+      </div>
+
+      <!-- 7-Day Trend -->
+      <div class="section-card">
+        <div class="section-head">
+          <div class="section-head-left">
+            <p class="card-title">Income Trend</p>
+            <h2>Last 7 Days</h2>
+          </div>
+        </div>
+        <div class="section-body">
+          <div id="trendBars" class="trend-bars"></div>
+          <div id="trendDays" class="trend-days"></div>
+        </div>
+      </div>
+
+      <!-- Recent Orders -->
+      <div class="section-card wide">
+        <div class="section-head">
+          <div class="section-head-left">
+            <p class="card-title">Orders</p>
+            <h2>Recent Orders</h2>
+          </div>
+        </div>
+        <div class="section-body">
+          <div id="recentOrders" class="list-stack"></div>
+        </div>
+      </div>
+
+      <!-- Top Customers -->
+      <div class="section-card">
+        <div class="section-head">
+          <div class="section-head-left">
+            <p class="card-title">Customers</p>
+            <h2>Top Customers</h2>
+          </div>
+        </div>
+        <div class="section-body">
+          <div id="topCustomers" class="list-stack"></div>
+        </div>
+      </div>
+
+      <!-- Monthly Report -->
+      <div class="section-card">
+        <div class="section-head">
+          <div class="section-head-left">
+            <p class="card-title">Monthly Report</p>
+            <h2 id="monthReportTitle">This Month</h2>
+          </div>
+        </div>
+        <div class="section-body">
+          <div id="monthlyStats" class="list-stack" style="margin-bottom:0.75rem"></div>
+          <p class="card-title" style="margin-bottom:0.4rem">All Products</p>
+          <div id="monthlyProducts" class="list-stack"></div>
+        </div>
+      </div>
+
+      <!-- Yearly Report -->
+      <div class="section-card">
+        <div class="section-head">
+          <div class="section-head-left">
+            <p class="card-title">Yearly Report</p>
+            <h2 id="yearReportTitle">This Year</h2>
+          </div>
+        </div>
+        <div class="section-body">
+          <div id="yearlyStats" class="list-stack" style="margin-bottom:0.75rem"></div>
+          <p class="card-title" style="margin-bottom:0.4rem">Month-wise Summary</p>
+          <div id="monthWiseList" class="list-stack"></div>
+        </div>
+      </div>
+
+      <!-- Full Customer List -->
+      <div class="section-card wide">
+        <div class="section-head">
+          <div class="section-head-left">
+            <p class="card-title">Customer Management</p>
+            <h2>Customer List</h2>
+          </div>
+        </div>
+        <div class="section-body">
+          <div id="customerListBody" class="list-stack"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Danger Zone (admin only) -->
+    <div class="card" data-role-only="admin" style="margin-top:1rem;border-color:#fecaca;background:#fff5f5">
+      <p class="card-title" style="color:var(--red)">Danger Zone</p>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-top:0.5rem">
+        <p style="font-size:0.85rem;color:var(--muted);margin:0">
+          Permanently delete all orders and customer data stored on this device.
+        </p>
+        <button id="clearDataBtn" class="btn btn-secondary" style="min-width:170px;min-height:44px;font-size:0.88rem;width:auto">
+          &#128465; Clear All Data
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Customer History Modal -->
+  <div class="modal-overlay" id="customerModal" role="dialog" aria-modal="true" aria-labelledby="modalCustomerName">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <p class="card-title">Customer Profile</p>
+          <h2 id="modalCustomerName">&#8212;</h2>
+        </div>
+        <button class="modal-close" id="modalClose" aria-label="Close">&#x2715;</button>
+      </div>
+      <div class="modal-stats-grid">
+        <div class="modal-stat">
+          <div class="modal-stat-val" id="modalTotalSpent">&#8212;</div>
+          <div class="modal-stat-lbl">Total Spent</div>
+        </div>
+        <div class="modal-stat">
+          <div class="modal-stat-val" id="modalTotalOrders">&#8212;</div>
+          <div class="modal-stat-lbl">Orders</div>
+        </div>
+        <div class="modal-stat">
+          <div class="modal-stat-val" id="modalLastVisit">&#8212;</div>
+          <div class="modal-stat-lbl">Last Visit</div>
+        </div>
+      </div>
+      <p class="card-title" style="margin-bottom:0.4rem">Favourite Item</p>
+      <div id="modalFav" style="margin-bottom:1rem;font-weight:700;font-size:1rem;color:var(--green)">&#8212;</div>
+      <p class="card-title" style="margin-bottom:0.4rem">Order History</p>
+      <div id="modalOrders" class="list-stack"></div>
+    </div>
+  </div>
+
+  <script src="auth.js" defer></script>
+  <script src="dashboard.js" defer></script>
+</body>
+</html>

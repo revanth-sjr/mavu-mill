@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>சக்தி எண்ணெய் மற்றும் மாவு ஆலை — Login</title>
+  <script>
+    // If a token is already saved, quickly verify it with the server
+    // before deciding whether to skip the login form.
+    (function () {
+      var token = localStorage.getItem('mavu_token');
+      if (!token) return;
+      fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + token } })
+        .then(function (res) { if (res.ok) window.location.replace('index.html'); })
+        .catch(function () {});
+    })();
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <main class="auth-shell">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <h1>சக்தி எண்ணெய் மற்றும் மாவு ஆலை</h1>
+        <p class="header-sub">Sign in / உள்நுழைய</p>
+      </div>
+
+      <form id="loginForm" novalidate>
+        <div class="field-group">
+          <label for="loginUsername">Username / பயனர்பெயர்</label>
+          <input id="loginUsername" type="text" placeholder="admin or staff" autocomplete="username" required>
+        </div>
+        <div class="field-group">
+          <label for="loginPassword">Password / கடவுச்சொல்</label>
+          <input id="loginPassword" type="password" placeholder="Enter password" autocomplete="current-password" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="loginSubmitBtn" style="width:100%;margin-top:0.5rem">
+          &#10003; Login
+        </button>
+        <p class="form-message" id="loginError" aria-live="polite"></p>
+      </form>
+
+      <div class="demo-hint">
+        <strong>First time here?</strong> Default accounts (change these once you're set up):<br>
+        Admin — <code>admin</code> / <code>admin123</code><br>
+        Staff — <code>staff</code> / <code>staff123</code>
+      </div>
+    </div>
+  </main>
+
+  <script src="auth.js" defer></script>
+</body>
+</html>
