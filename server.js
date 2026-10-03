@@ -16,6 +16,21 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
+
+// Ensure database is ready before processing API requests
+app.use('/api', async (req, res, next) => {
+  try {
+    await initDb();
+    next();
+  } catch (err) {
+    console.error('Database initialization error:', err.message);
+    res.status(500).json({
+      message: 'Database connection failed. Please check database configuration.',
+      error: err.message
+    });
+  }
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/orders', ordersRoutes);
@@ -234,20 +249,6 @@ function initDb() {
   }
   return dbInitPromise;
 }
-
-// Ensure database is ready before processing API requests
-app.use('/api', async (req, res, next) => {
-  try {
-    await initDb();
-    next();
-  } catch (err) {
-    console.error('Database initialization error:', err.message);
-    res.status(500).json({
-      message: 'Database connection failed. Please check database configuration.',
-      error: err.message
-    });
-  }
-});
 
 // Start listening if executed directly (e.g. "node server.js" or "npm start")
 if (require.main === module) {
