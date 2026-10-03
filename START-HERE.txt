@@ -1,0 +1,92 @@
+===============================================================
+  SAKTHI MILL — HOW TO START THE APP
+===============================================================
+
+You only need to do STEP 1 and STEP 2 the very first time.
+After that, starting the app is just STEP 3.
+
+---------------------------------------------------------------
+BEFORE YOU BEGIN — two things must be installed:
+
+  1. Node.js        -> https://nodejs.org  (download the "LTS" version)
+  2. MySQL          -> easiest option is XAMPP: https://apachefriends.org
+                       (XAMPP gives you a control panel with a Start
+                        button for MySQL, which is much easier to manage)
+
+  If you installed XAMPP: OPEN THE XAMPP CONTROL PANEL AND CLICK
+  "START" NEXT TO MySQL. The app cannot work unless MySQL is running.
+
+---------------------------------------------------------------
+STEP 1 — Open a terminal INSIDE this folder
+
+  This folder is the one containing "package.json" and "server.js".
+
+  Windows:  open this folder in File Explorer, click the address
+            bar at the top, type   cmd   and press Enter.
+
+  Mac:      open Terminal, type   cd    (with a space after it),
+            then drag this folder into the window and press Enter.
+
+  To confirm you're in the right place, type:      dir      (Windows)
+                                          or:      ls       (Mac)
+  You should see server.js and package.json listed.
+
+---------------------------------------------------------------
+STEP 2 — First-time setup (only needed once)
+
+  Type these two commands, one at a time:
+
+      npm install
+
+      npm run setup
+
+  "npm run setup" will ask for your MySQL details.
+  If you're using XAMPP, just press Enter at every question
+  (the defaults are correct for XAMPP).
+
+  Or skip the questions entirely with:
+
+      npm run setup -- --defaults
+
+  It will tell you clearly if it cannot reach MySQL, and what to fix.
+  You should see: "SUCCESS — connected to MySQL, database is ready."
+
+---------------------------------------------------------------
+STEP 3 — Start the app (this is all you do from now on)
+
+      npm start
+
+  You should see: "Sakthi Mill server is running."
+
+  Now open your web browser and go to:
+
+      http://localhost:4000
+
+  IMPORTANT: type that address into the browser.
+  Do NOT double-click the HTML files in the "public" folder.
+  That is the most common mistake and it will not work.
+
+  Leave the terminal window OPEN while using the app.
+  Press Ctrl+C in the terminal to stop the server.
+
+---------------------------------------------------------------
+FIRST LOGIN
+
+      Admin  ->  admin / admin123
+      Staff  ->  staff / staff123
+
+  Once inside, go to Products -> Team Accounts, create your own
+  admin account with a real password, then delete these two.
+
+---------------------------------------------------------------
+IF SOMETHING GOES WRONG
+
+  The app now explains errors in plain language in the terminal.
+  Read the message in the terminal window — it will tell you
+  whether MySQL is not running, the password is wrong, etc.
+
+  Quick test: open http://localhost:4000/api/health in a browser.
+    {"ok":true}          -> the server is running fine
+    page will not load   -> the server is not running; see STEP 3
+
+===============================================================

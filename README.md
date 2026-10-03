@@ -88,38 +88,72 @@ delete an admin account — that's a safety rule, not a bug).
   in the UI. Even if someone tampered with the frontend, the API itself
   refuses the request.
 
-## 3. Deploying it online (free/cheap)
+## 3. Deploying it online
 
-Two pieces to host: the Node app itself, and a MySQL database. Since this
-server serves the frontend too, you only need to deploy **one service**.
+Two pieces to host: the Node app, and a MySQL database. Because this server
+serves the frontend too, you only deploy **one app service** plus a database.
 
-A couple of realistic starting points as of mid-2026:
+**Checked August 2026 — but free tiers change constantly, so confirm current
+terms on each provider's own pricing page before committing.**
 
-- **Railway** — deploys Node + MySQL together, and has historically been
-  one of the easier ways to get a Node+Express+MySQL app online without
-  needing a credit card up front.
-- **Render** — free web service hosting for the Node app is easy to set
-  up, but Render's own managed database is Postgres, not MySQL — you'd
-  point it at a MySQL database hosted elsewhere (e.g. a small managed
-  MySQL provider, or a MySQL instance on the same host as above).
+### Option A — Free (₹0/month)
 
-**Free tiers on every hosting platform change often** (limits, sleep/cold-start
-behavior, whether a credit card is required) — it's worth checking each
-platform's current pricing page before committing, rather than trusting
-any specific numbers as gospel. Whichever you pick, the steps are the same
-shape:
+- **Database: Aiven for MySQL free tier** — always-free managed MySQL,
+  roughly 1GB storage, no credit card required. This is currently one of the
+  few genuinely always-free managed *MySQL* options (many providers only
+  offer free PostgreSQL).
+- **App: Render free web service** — deploys Node straight from GitHub, no
+  credit card, 750 instance-hours/month.
 
-1. Push this `server/` folder to a GitHub repo.
-2. Create a MySQL database on your chosen provider; note the host, port,
-   user, password, and database name.
-3. Create a new Node web service pointing at your repo, with **Start
-   Command**: `npm start`.
-4. Set the environment variables from your `.env` (`DB_HOST`, `DB_PORT`,
-   `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`) in the host's
-   dashboard — never commit your real `.env` file.
-5. Deploy. On first boot, the server creates its tables and seeds the two
-   demo accounts automatically — same as local setup.
-6. Log in, create your real accounts, delete the demo ones.
+The catch worth knowing up front: Render's free web services **sleep after
+15 minutes of inactivity**, and the next request takes roughly 30–60 seconds
+to wake up. For a mill counter where a customer is waiting for their receipt,
+that delay is genuinely annoying.
+
+Workaround: point a free uptime monitor (e.g. UptimeRobot) at
+`https://your-app.onrender.com/api/health` every ~10 minutes. That keeps the
+service awake. 750 hours/month is just about a full month of always-on for a
+single service, so this fits — but it leaves no headroom for a second service.
+
+### Option C — Vercel (Frontend CDN + Serverless Express)
+
+With the included `vercel.json` and `api/index.js`, you can deploy directly to Vercel:
+- **Frontend**: Served automatically from `public/` via Vercel's global edge network with instant load times.
+- **Backend**: Express API routes (`/api/*`) execute as serverless Node.js functions.
+- **Database**: Connect to an online MySQL provider (e.g. TiDB Cloud Serverless, Aiven, or Railway MySQL).
+
+**Steps on Vercel:**
+1. Import this repository into Vercel.
+2. Leave Framework Preset as **Other** and Root Directory as `./`.
+3. Add Environment Variables under **Project Settings > Environment Variables**:
+   - `DATABASE_URL` (or `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`)
+   - `DB_SSL=true`
+   - `JWT_SECRET`
+4. Click **Deploy**.
+
+### Deployment steps (Render, Railway, or VPS)
+
+1. Push this folder to a GitHub repo. The included `.gitignore` already
+   excludes `.env` and `node_modules` — **never commit your real `.env`**.
+2. Create your MySQL database on your chosen provider. Note the host, port,
+   user, password, database name — and download the **CA certificate** if
+   they provide one (Aiven does).
+3. Create a new Node web service pointing at your repo:
+   - **Build Command**: `npm install`
+   - **Start Command**: `npm start`
+4. Set environment variables in the host's dashboard (not in a file):
+   - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
+     (or a single `DATABASE_URL` if your provider gives you one)
+   - `DB_SSL=true` — **required by essentially every cloud MySQL provider**
+   - `DB_SSL_CA` — paste the CA certificate contents if you have one
+     (more secure; without it the connection is still encrypted, but the
+     server's identity isn't verified)
+   - `JWT_SECRET` — a long random string, generated as shown in section 1
+   - Leave `PORT` unset; most hosts set it automatically.
+5. Deploy. On first boot the server creates its tables and seeds the demo
+   accounts automatically, same as local.
+6. Open the URL, log in as `admin`/`admin123`, create your real admin
+   account under Products → Team Accounts, then delete the demo accounts.
 
 ## 4. API reference (for your own reference / future frontend work)
 

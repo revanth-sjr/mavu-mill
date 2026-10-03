@@ -14,194 +14,201 @@
 <body>
   <a class="skip-link" href="#dashboard-main">Skip to content</a>
 
-  <header class="app-header">
-    <div class="header-inner">
-      <div class="header-top">
-        <div>
-          <h1>சக்தி எண்ணெய் மற்றும் மாவு ஆலை</h1>
-          <p class="header-sub">Dashboard / சுருக்கம்</p>
+  <div class="app">
+  <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">ச</div>
+        <div class="brand-text">
+          <div class="brand-name">சக்தி ஆலை</div>
+          <div class="brand-sub">Oil &amp; Flour Mill</div>
         </div>
-        <div class="header-top-right">
+      </div>
+
+      <p class="nav-label">Workspace</p>
+      <nav class="nav" aria-label="Primary">
+        <a class="nav-link" href="index.html"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2V2z"/><path d="M9 8h6M9 12h6"/></svg><span>Billing</span></a>
+        <a class="nav-link active" href="dashboard.html"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h6V3H3zM15 21h6V11h-6zM3 21h6v-5H3zM15 7h6V3h-6z"/></svg><span>Dashboard</span></a>
+        <a class="nav-link" href="products.html" data-role-only="admin"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 12l9 5 9-5M3 16l9 5 9-5"/></svg><span>Products</span></a>
+      </nav>
+
+      <div class="sidebar-foot">
+        <p class="sidebar-note">Sakthi Mill<br>Billing &amp; Records</p>
+      </div>
+    </aside>
+
+    <div class="main-col">
+      <header class="topbar">
+        <div class="topbar-title">
+          <span class="eyebrow">Dashboard</span>
+          <h1>Business overview</h1>
+        </div>
+        <div class="topbar-meta">
           <span class="last-updated" id="lastUpdated"></span>
           <span class="user-chip" id="userChip"></span>
         </div>
-      </div>
-      <nav class="top-nav" aria-label="Primary">
-        <a class="nav-link" href="index.html">Billing</a>
-        <a class="nav-link active" href="dashboard.html">Dashboard</a>
-        <a class="nav-link" href="products.html" data-role-only="admin">Products</a>
-      </nav>
+      </header>
+
+      <main id="dashboard-main" class="page-shell">
+        <!-- Controls -->
+        <div class="dash-controls">
+          <div class="filter-group">
+            <span class="filter-label">Period</span>
+            <button class="filter-btn active" data-period="today">Today</button>
+            <button class="filter-btn" data-period="month">This month</button>
+            <button class="filter-btn" data-period="year">This year</button>
+            <button class="filter-btn" data-period="all">All time</button>
+          </div>
+          <div class="divider"></div>
+          <div class="filter-group">
+            <span class="filter-label">Sort</span>
+            <select class="sort-select" id="sortSelect">
+              <option value="recent">Most recent</option>
+              <option value="oldest">Oldest first</option>
+              <option value="highest_qty">Highest quantity</option>
+              <option value="lowest_qty">Lowest quantity</option>
+              <option value="highest_total">Highest total</option>
+            </select>
+          </div>
+          <div style="flex:1"></div>
+          <button class="filter-btn" id="refreshDashboardBtn">&#8635; Refresh</button>
+          <a class="quick-new-btn" href="index.html">+ New bill</a>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="card stat-card accent-green">
+            <div class="stat-label">Total earnings</div>
+            <div class="stat-val" id="statEarnings">&#8377;0.00</div>
+            <div class="stat-sub" id="statEarningSub"></div>
+          </div>
+          <div class="card stat-card accent-blue">
+            <div class="stat-label">Total orders</div>
+            <div class="stat-val" id="statOrders">0</div>
+            <div class="stat-sub" id="statOrdersSub"></div>
+          </div>
+          <div class="card stat-card accent-orange">
+            <div class="stat-label">Total quantity</div>
+            <div class="stat-val" id="statQty">0.00</div>
+            <div class="stat-sub" id="statQtySub"></div>
+          </div>
+        </div>
+
+        <div class="dash-grid">
+
+          <div class="section-card">
+            <div class="section-head">
+              <div class="section-head-left">
+                <p class="card-title">Products</p>
+                <h2>Top selling items</h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <div id="topItemsList" class="list-stack"></div>
+            </div>
+          </div>
+
+          <div class="section-card">
+            <div class="section-head">
+              <div class="section-head-left">
+                <p class="card-title">Income trend</p>
+                <h2>Last 7 days</h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <div id="trendBars" class="trend-bars"></div>
+              <div id="trendDays" class="trend-days"></div>
+            </div>
+          </div>
+
+          <div class="section-card wide">
+            <div class="section-head">
+              <div class="section-head-left">
+                <p class="card-title">Orders</p>
+                <h2>Recent orders</h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <div id="recentOrders" class="list-stack"></div>
+            </div>
+          </div>
+
+          <div class="section-card">
+            <div class="section-head">
+              <div class="section-head-left">
+                <p class="card-title">Customers</p>
+                <h2>Top customers</h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <div id="topCustomers" class="list-stack"></div>
+            </div>
+          </div>
+
+          <div class="section-card">
+            <div class="section-head">
+              <div class="section-head-left">
+                <p class="card-title">Monthly report</p>
+                <h2><span id="monthReportTitle">This month</span></h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <div id="monthlyStats" class="list-stack" style="margin-bottom:0.9rem"></div>
+              <p class="group-label">All products</p>
+              <div id="monthlyProducts" class="list-stack"></div>
+            </div>
+          </div>
+
+          <div class="section-card">
+            <div class="section-head">
+              <div class="section-head-left">
+                <p class="card-title">Yearly report</p>
+                <h2><span id="yearReportTitle">This year</span></h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <div id="yearlyStats" class="list-stack" style="margin-bottom:0.9rem"></div>
+              <p class="group-label">Month by month</p>
+              <div id="monthWiseList" class="list-stack"></div>
+            </div>
+          </div>
+
+          <div class="section-card wide">
+            <div class="section-head">
+              <div class="section-head-left">
+                <p class="card-title">Customer management</p>
+                <h2>Customer list</h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <div class="customer-search-row">
+                <input type="search" id="customerSearchInput" class="customer-search-input" placeholder="Search by name or phone">
+                <span id="customerSearchCount" class="customer-search-count"></span>
+              </div>
+              <div id="customerListBody" class="list-stack"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Danger zone (admin only) -->
+        <div class="danger-card" data-role-only="admin">
+          <p class="card-title">Danger zone</p>
+          <div class="danger-row">
+            <p>Permanently delete every order and customer record. This cannot be undone.</p>
+            <button id="clearDataBtn" class="btn btn-danger">Clear all data</button>
+          </div>
+        </div>
+      </main>
     </div>
-  </header>
+  </div>
 
-  <main id="dashboard-main" class="page-shell">
 
-    <!-- Controls Bar -->
-    <div class="dash-controls">
-      <div class="filter-group">
-        <span class="filter-label">Period</span>
-        <button class="filter-btn active" data-period="today">Today</button>
-        <button class="filter-btn" data-period="month">This Month</button>
-        <button class="filter-btn" data-period="year">This Year</button>
-        <button class="filter-btn" data-period="all">All Time</button>
-      </div>
-      <div class="divider"></div>
-      <div class="filter-group">
-        <span class="filter-label">Sort</span>
-        <select class="sort-select" id="sortSelect">
-          <option value="recent">Most Recent</option>
-          <option value="oldest">Oldest First</option>
-          <option value="highest_qty">Highest Qty</option>
-          <option value="lowest_qty">Lowest Qty</option>
-          <option value="highest_total">Highest Total</option>
-        </select>
-      </div>
-      <div style="flex:1"></div>
-      <button class="filter-btn" id="refreshDashboardBtn" style="border-color:var(--green);color:var(--green)">&#8635; Refresh</button>
-      <a class="quick-new-btn" href="index.html">+ New Bill</a>
-    </div>
-
-    <!-- Summary Stats -->
-    <div class="stats-grid">
-      <div class="card stat-card accent-green">
-        <div class="stat-label">Total Earnings</div>
-        <div class="stat-val" id="statEarnings">&#8377;0.00</div>
-        <div class="stat-sub" id="statEarningSub"></div>
-      </div>
-      <div class="card stat-card accent-blue">
-        <div class="stat-label">Total Orders</div>
-        <div class="stat-val" id="statOrders">0</div>
-        <div class="stat-sub" id="statOrdersSub"></div>
-      </div>
-      <div class="card stat-card accent-orange">
-        <div class="stat-label">Total Quantity</div>
-        <div class="stat-val" id="statQty">0.00</div>
-        <div class="stat-sub" id="statQtySub"></div>
-      </div>
-    </div>
-
-    <!-- Main Grid -->
-    <div class="dash-grid">
-
-      <!-- Top Products -->
-      <div class="section-card">
-        <div class="section-head">
-          <div class="section-head-left">
-            <p class="card-title">Products</p>
-            <h2>Top Selling Items</h2>
-          </div>
-        </div>
-        <div class="section-body">
-          <div id="topItemsList" class="list-stack"></div>
-        </div>
-      </div>
-
-      <!-- 7-Day Trend -->
-      <div class="section-card">
-        <div class="section-head">
-          <div class="section-head-left">
-            <p class="card-title">Income Trend</p>
-            <h2>Last 7 Days</h2>
-          </div>
-        </div>
-        <div class="section-body">
-          <div id="trendBars" class="trend-bars"></div>
-          <div id="trendDays" class="trend-days"></div>
-        </div>
-      </div>
-
-      <!-- Recent Orders -->
-      <div class="section-card wide">
-        <div class="section-head">
-          <div class="section-head-left">
-            <p class="card-title">Orders</p>
-            <h2>Recent Orders</h2>
-          </div>
-        </div>
-        <div class="section-body">
-          <div id="recentOrders" class="list-stack"></div>
-        </div>
-      </div>
-
-      <!-- Top Customers -->
-      <div class="section-card">
-        <div class="section-head">
-          <div class="section-head-left">
-            <p class="card-title">Customers</p>
-            <h2>Top Customers</h2>
-          </div>
-        </div>
-        <div class="section-body">
-          <div id="topCustomers" class="list-stack"></div>
-        </div>
-      </div>
-
-      <!-- Monthly Report -->
-      <div class="section-card">
-        <div class="section-head">
-          <div class="section-head-left">
-            <p class="card-title">Monthly Report</p>
-            <h2 id="monthReportTitle">This Month</h2>
-          </div>
-        </div>
-        <div class="section-body">
-          <div id="monthlyStats" class="list-stack" style="margin-bottom:0.75rem"></div>
-          <p class="card-title" style="margin-bottom:0.4rem">All Products</p>
-          <div id="monthlyProducts" class="list-stack"></div>
-        </div>
-      </div>
-
-      <!-- Yearly Report -->
-      <div class="section-card">
-        <div class="section-head">
-          <div class="section-head-left">
-            <p class="card-title">Yearly Report</p>
-            <h2 id="yearReportTitle">This Year</h2>
-          </div>
-        </div>
-        <div class="section-body">
-          <div id="yearlyStats" class="list-stack" style="margin-bottom:0.75rem"></div>
-          <p class="card-title" style="margin-bottom:0.4rem">Month-wise Summary</p>
-          <div id="monthWiseList" class="list-stack"></div>
-        </div>
-      </div>
-
-      <!-- Full Customer List -->
-      <div class="section-card wide">
-        <div class="section-head">
-          <div class="section-head-left">
-            <p class="card-title">Customer Management</p>
-            <h2>Customer List</h2>
-          </div>
-        </div>
-        <div class="section-body">
-          <div id="customerListBody" class="list-stack"></div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Danger Zone (admin only) -->
-    <div class="card" data-role-only="admin" style="margin-top:1rem;border-color:#fecaca;background:#fff5f5">
-      <p class="card-title" style="color:var(--red)">Danger Zone</p>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-top:0.5rem">
-        <p style="font-size:0.85rem;color:var(--muted);margin:0">
-          Permanently delete all orders and customer data stored on this device.
-        </p>
-        <button id="clearDataBtn" class="btn btn-secondary" style="min-width:170px;min-height:44px;font-size:0.88rem;width:auto">
-          &#128465; Clear All Data
-        </button>
-      </div>
-    </div>
-
-  </main>
-
-  <!-- Customer History Modal -->
+  <!-- Customer history -->
   <div class="modal-overlay" id="customerModal" role="dialog" aria-modal="true" aria-labelledby="modalCustomerName">
     <div class="modal">
       <div class="modal-header">
         <div>
-          <p class="card-title">Customer Profile</p>
+          <p class="card-title">Customer profile</p>
           <h2 id="modalCustomerName">&#8212;</h2>
         </div>
         <button class="modal-close" id="modalClose" aria-label="Close">&#x2715;</button>
@@ -209,7 +216,7 @@
       <div class="modal-stats-grid">
         <div class="modal-stat">
           <div class="modal-stat-val" id="modalTotalSpent">&#8212;</div>
-          <div class="modal-stat-lbl">Total Spent</div>
+          <div class="modal-stat-lbl">Total spent</div>
         </div>
         <div class="modal-stat">
           <div class="modal-stat-val" id="modalTotalOrders">&#8212;</div>
@@ -217,12 +224,12 @@
         </div>
         <div class="modal-stat">
           <div class="modal-stat-val" id="modalLastVisit">&#8212;</div>
-          <div class="modal-stat-lbl">Last Visit</div>
+          <div class="modal-stat-lbl">Last visit</div>
         </div>
       </div>
-      <p class="card-title" style="margin-bottom:0.4rem">Favourite Item</p>
-      <div id="modalFav" style="margin-bottom:1rem;font-weight:700;font-size:1rem;color:var(--green)">&#8212;</div>
-      <p class="card-title" style="margin-bottom:0.4rem">Order History</p>
+      <p class="group-label">Favourite item</p>
+      <div id="modalFav" style="margin-bottom:1.1rem;font-weight:600;font-size:1rem;color:var(--mill)">&#8212;</div>
+      <p class="group-label">Order history</p>
       <div id="modalOrders" class="list-stack"></div>
     </div>
   </div>

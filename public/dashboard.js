@@ -52,8 +52,12 @@ function sortOrders(orders, sort) {
 function buildCustomerMap(orders) {
   const map = {};
   orders.filter(o => o.tracked !== false).forEach(o => {
-    const key = o.name.trim().toLowerCase();
-    if (!map[key]) map[key] = { name: o.name, orders: [], productCount: {} };
+    // Group by the real customer_id from the database when we have one
+    // (the normal case) — fall back to a name-based key only for legacy
+    // data that predates the customers table.
+    const key = o.customerId != null ? `id:${o.customerId}` : `name:${o.name.trim().toLowerCase()}`;
+    if (!map[key]) map[key] = { name: o.name, phone: o.phone || null, orders: [], productCount: {} };
+    if (!map[key].phone && o.phone) map[key].phone = o.phone;
     map[key].orders.push(o);
     map[key].productCount[o.product] = (map[key].productCount[o.product] || 0) + o.quantity;
   });
@@ -62,6 +66,7 @@ function buildCustomerMap(orders) {
     const fav = Object.entries(c.productCount).sort((a,b) => b[1]-a[1])[0];
     return {
       name:       c.name,
+      phone:      c.phone,
       visits:     c.orders.length,
       spent:      c.orders.reduce((s,o) => s + o.total, 0),
       favProduct: fav ? fav[0] : '—',
@@ -201,7 +206,7 @@ function renderTopCustomers(filtered) {
               ${c.name}
               ${isRepeat?'<span class="repeat-badge" style="margin-left:0.3rem">Regular</span>':''}
             </div>
-            <div class="customer-meta">${c.visits} visit${c.visits>1?'s':''} · Last: ${fmtDay(c.lastVisit)}</div>
+            <div class="customer-meta">${c.visits} visit${c.visits>1?'s':''} · Last: ${fmtDay(c.lastVisit)}${c.phone ? ' · ' + c.phone : ''}</div>
           </div>
         </div>
         <div style="text-align:right">
@@ -220,12 +225,34 @@ function renderTopCustomers(filtered) {
   });
 }
 
-// ── Render customer list (full) ───────────────────────────────
+// ── Render customer list (full, with search filter) ───────────
+let customerSearchTerm = '';
+
 function renderCustomerList() {
   const el = document.getElementById('customerListBody');
   if (!el) return;
-  const cmap = buildCustomerMap(allOrders);
-  if (!cmap.length) { el.innerHTML = emptyState('No tracked customers yet.'); return; }
+  let cmap = buildCustomerMap(allOrders);
+  const total = cmap.length;
+
+  const term = customerSearchTerm.trim().toLowerCase();
+  if (term) {
+    cmap = cmap.filter(c =>
+      c.name.toLowerCase().includes(term) ||
+      (c.phone && c.phone.toLowerCase().includes(term))
+    );
+  }
+
+  const countEl = document.getElementById('customerSearchCount');
+  if (countEl) {
+    countEl.textContent = term
+      ? `${cmap.length} of ${total}`
+      : `${total} customer${total === 1 ? '' : 's'}`;
+  }
+
+  if (!cmap.length) {
+    el.innerHTML = emptyState(term ? `No customer matches "${customerSearchTerm}".` : 'No tracked customers yet.');
+    return;
+  }
   el.innerHTML = cmap.map(c => {
     const isRepeat = c.visits >= 3;
     return `
@@ -238,7 +265,7 @@ function renderCustomerList() {
               ${c.name}
               ${isRepeat?'<span class="repeat-badge" style="margin-left:0.3rem">Regular</span>':''}
             </div>
-            <div class="customer-meta">${c.visits} visit${c.visits>1?'s':''} · Last: ${fmtDay(c.lastVisit)}</div>
+            <div class="customer-meta">${c.visits} visit${c.visits>1?'s':''} · Last: ${fmtDay(c.lastVisit)}${c.phone ? ' · ' + c.phone : ''}</div>
           </div>
         </div>
         <div style="text-align:right">
@@ -355,7 +382,7 @@ function openCustomerModal(name) {
   const c = cmap.find(x => x.name.toLowerCase() === name.toLowerCase());
   if (!c) return;
 
-  document.getElementById('modalCustomerName').textContent = c.name;
+  document.getElementById('modalCustomerName').textContent = c.phone ? `${c.name} (${c.phone})` : c.name;
   document.getElementById('modalTotalSpent').textContent   = fmtShort(c.spent);
   document.getElementById('modalTotalOrders').textContent  = c.visits;
   document.getElementById('modalLastVisit').textContent    = fmtDay(c.lastVisit);
@@ -458,6 +485,14 @@ if (clearBtn) clearBtn.addEventListener('click', clearAllData);
 
 const refreshBtn = document.getElementById('refreshDashboardBtn');
 if (refreshBtn) refreshBtn.addEventListener('click', renderDashboard);
+
+const customerSearchInput = document.getElementById('customerSearchInput');
+if (customerSearchInput) {
+  customerSearchInput.addEventListener('input', e => {
+    customerSearchTerm = e.target.value;
+    renderCustomerList(); // filters in memory, no refetch needed
+  });
+}
 
 // ── Init ──────────────────────────────────────────────────────
 (async function () {

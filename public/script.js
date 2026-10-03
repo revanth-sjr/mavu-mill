@@ -12,6 +12,7 @@ function fmtDate(d) {
 
 // ── DOM refs ──────────────────────────────────────────────────
 const customerNameInput  = document.getElementById('customerName');
+const customerPhoneInput = document.getElementById('customerPhone');
 const productSelect      = document.getElementById('productSelect');
 const quantityInput      = document.getElementById('quantityInput');
 const rateInput          = document.getElementById('rateInput');
@@ -73,7 +74,7 @@ function updateRateStatus() {
   const product = getSelectedProduct();
   const cur = parseFloat(rateInput.value) || 0;
   const isCustom = Boolean(product) && cur !== currentDefaultRate;
-  rateStatus.textContent = isCustom ? 'Custom Rate' : 'Default Rate';
+  rateStatus.textContent = isCustom ? 'Custom rate' : 'Default rate';
   rateStatus.classList.toggle('custom', isCustom);
 }
 
@@ -89,7 +90,7 @@ function updateCalc() {
     defaultRateDisplay.textContent = '\u20B90.00';
     currentRateDisplay.textContent = '\u20B90.00';
     totalDisplay.textContent = '\u20B90.00';
-    rateStatus.textContent = 'Default Rate';
+    rateStatus.textContent = 'Default rate';
     rateStatus.classList.remove('custom');
     return;
   }
@@ -113,18 +114,21 @@ function handleProductChange() {
 // ── Validate & build order ────────────────────────────────────
 function getOrderData() {
   const name    = customerNameInput.value.trim();
+  const phone   = customerPhoneInput ? customerPhoneInput.value.trim() : '';
   const product = getSelectedProduct();
   const qty     = parseFloat(quantityInput.value);
   const rate    = parseFloat(rateInput.value);
   const tracked = trackCustomerCheck ? trackCustomerCheck.checked : true;
 
   if (!name)              return { error: 'Please enter customer name / \u0BB5\u0BBE\u0B9F\u0BBF\u0B95\u0BCD\u0B95\u0BC8\u0BAF\u0BBE\u0BB3\u0BB0\u0BCD \u0BAA\u0BC6\u0BAF\u0BB0\u0BC8 \u0B89\u0BB3\u0BCD\u0BB3\u0BBF\u0B9F\u0BB5\u0BC1\u0BAE\u0BCD' };
+  if (phone && !/^[0-9+\-\s]{7,15}$/.test(phone)) return { error: 'Enter a valid phone number, or leave it blank.' };
   if (!product)           return { error: 'Please select product / \u0BAA\u0BCA\u0BB0\u0BC1\u0BB3\u0BC8 \u0BA4\u0BC7\u0BB0\u0BCD\u0BB5\u0BC1 \u0B9A\u0BC6\u0BAF\u0BCD\u0BAF\u0BB5\u0BC1\u0BAE\u0BCD' };
   if (!qty || qty <= 0)   return { error: 'Please enter valid quantity / \u0B9A\u0BB0\u0BBF\u0BAF\u0BBE\u0BA9 \u0A85\u0BB3\u0BB5\u0BC8 \u0B89\u0BB3\u0BCD\u0BB3\u0BBF\u0B9F\u0BB5\u0BC1\u0BAE\u0BCD' };
   if (isNaN(rate)||rate<0)return { error: 'Please enter valid rate / \u0B9A\u0BB0\u0BBF\u0BAF\u0BBE\u0BA9 \u0BB5\u0BBF\u0BB2\u0BC8 \u0B89\u0BB3\u0BCD\u0BB3\u0BBF\u0B9F\u0BB5\u0BC1\u0BAE\u0BCD' };
 
   return {
     name,
+    phone: phone || undefined,
     product:    product.name,
     quantity:   qty,
     unit:       product.unit,
@@ -139,10 +143,17 @@ function getOrderData() {
 function renderReceipt(order) {
   document.getElementById('receiptDate').textContent     = fmtDate(order.date);
   document.getElementById('receiptCustomer').textContent = order.name;
+  const phoneRow = document.getElementById('receiptPhoneRow');
+  if (order.phone) {
+    document.getElementById('receiptPhone').textContent = order.phone;
+    phoneRow.style.display = '';
+  } else {
+    phoneRow.style.display = 'none';
+  }
   document.getElementById('receiptProduct').textContent  = order.product;
   document.getElementById('receiptQuantity').textContent = `${order.quantity.toFixed(2)} ${order.unit}`;
   document.getElementById('receiptRate').textContent     = `${fmt(order.rate)} / ${order.unit}`;
-  document.getElementById('receiptRateType').textContent = order.customRate ? 'Custom Rate' : 'Default Rate';
+  document.getElementById('receiptRateType').textContent = order.customRate ? 'Custom rate' : 'Default rate';
   document.getElementById('receiptTotal').textContent    = fmt(order.total);
 }
 
@@ -151,11 +162,13 @@ function resetForm() {
   document.getElementById('billingForm').reset();
   unitDisplay.value = '-';
   currentDefaultRate = 0;
-  rateStatus.textContent = 'Default Rate';
+  rateStatus.textContent = 'Default rate';
   rateStatus.classList.remove('custom');
   defaultRateDisplay.textContent = '\u20B90.00';
   currentRateDisplay.textContent = '\u20B90.00';
   totalDisplay.textContent = '\u20B90.00';
+  if (customerMatchHint) customerMatchHint.textContent = '';
+  hideSuggestions();
 }
 
 // ── Generate receipt (saves the order via the API) ─────────────
@@ -205,6 +218,87 @@ function updateTrackLabel() {
   }
 }
 
+// ── Customer lookup (search existing customers while typing) ────
+const customerSuggestions = document.getElementById('customerSuggestions');
+const customerMatchHint   = document.getElementById('customerMatchHint');
+let suggestTimer = null;
+let activeSuggestionIndex = -1;
+let currentSuggestions = [];
+
+function hideSuggestions() {
+  customerSuggestions.classList.remove('open');
+  customerSuggestions.innerHTML = '';
+  activeSuggestionIndex = -1;
+  currentSuggestions = [];
+}
+
+function showMatchHint(customer) {
+  if (!customerMatchHint) return;
+  if (!customer) { customerMatchHint.textContent = ''; return; }
+  const visits = customer.orderCount;
+  customerMatchHint.textContent = `\u2713 Existing customer \u00b7 ${visits} previous order${visits === 1 ? '' : 's'} \u00b7 ${fmt(customer.totalSpent)} total`;
+}
+
+function renderSuggestions(customers) {
+  currentSuggestions = customers;
+  if (!customers.length) { hideSuggestions(); return; }
+  customerSuggestions.innerHTML = customers.map((c, i) => `
+    <button type="button" class="suggestion-item${i === activeSuggestionIndex ? ' active' : ''}" data-index="${i}" role="option">
+      <span class="suggestion-name">${c.name}</span>
+      <span class="suggestion-meta">${c.phone ? c.phone + ' \u00b7 ' : ''}${c.orderCount} order${c.orderCount === 1 ? '' : 's'}</span>
+    </button>`).join('');
+  customerSuggestions.classList.add('open');
+
+  customerSuggestions.querySelectorAll('.suggestion-item').forEach(btn => {
+    btn.addEventListener('mousedown', e => {
+      e.preventDefault(); // keep focus so blur doesn't close it first
+      selectCustomer(currentSuggestions[Number(btn.dataset.index)]);
+    });
+  });
+}
+
+function selectCustomer(customer) {
+  if (!customer) return;
+  customerNameInput.value = customer.name;
+  if (customerPhoneInput) customerPhoneInput.value = customer.phone || '';
+  showMatchHint(customer);
+  hideSuggestions();
+  quantityInput.focus();
+}
+
+async function searchCustomers(term) {
+  if (!term || term.trim().length < 2) { hideSuggestions(); return; }
+  try {
+    const data = await apiFetch(`/customers?q=${encodeURIComponent(term.trim())}&limit=6`);
+    renderSuggestions(data.customers);
+  } catch (e) {
+    hideSuggestions();
+  }
+}
+
+function handleCustomerInput(e) {
+  showMatchHint(null);
+  clearTimeout(suggestTimer);
+  const term = e.target.value;
+  // Debounce so we're not firing a request on every keystroke.
+  suggestTimer = setTimeout(() => searchCustomers(term), 250);
+}
+
+function handleSuggestionKeys(e) {
+  if (!customerSuggestions.classList.contains('open')) return;
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    const dir = e.key === 'ArrowDown' ? 1 : -1;
+    activeSuggestionIndex = Math.max(0, Math.min(currentSuggestions.length - 1, activeSuggestionIndex + dir));
+    renderSuggestions(currentSuggestions);
+  } else if (e.key === 'Enter' && activeSuggestionIndex >= 0) {
+    e.preventDefault();
+    selectCustomer(currentSuggestions[activeSuggestionIndex]);
+  } else if (e.key === 'Escape') {
+    hideSuggestions();
+  }
+}
+
 // ── Refresh catalogue (e.g. admin updated prices in another tab) ──
 async function refreshProductData() {
   const currentVal = productSelect.value;
@@ -224,6 +318,13 @@ generateBtn.addEventListener('click', generateReceipt);
 document.getElementById('printReceiptBtn').addEventListener('click', printReceipt);
 if (trackCustomerCheck) trackCustomerCheck.addEventListener('change', updateTrackLabel);
 window.addEventListener('focus', refreshProductData);
+
+customerNameInput.addEventListener('input', handleCustomerInput);
+customerNameInput.addEventListener('keydown', handleSuggestionKeys);
+customerNameInput.addEventListener('blur', () => setTimeout(hideSuggestions, 150));
+if (customerPhoneInput) {
+  customerPhoneInput.addEventListener('input', () => showMatchHint(null));
+}
 
 // ── Init ──────────────────────────────────────────────────────
 (async function () {

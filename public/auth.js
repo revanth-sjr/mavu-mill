@@ -117,7 +117,7 @@ if (loginForm) {
     } catch (err) {
       loginError.textContent = 'Could not reach the server. Please check your connection and try again.';
     } finally {
-      if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = '\u2713 Login'; }
+      if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Sign in'; }
     }
   });
 }

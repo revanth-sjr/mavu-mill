@@ -17,136 +17,155 @@
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
 
-  <header class="app-header">
-    <div class="header-inner">
-      <div class="header-top">
-        <div>
-          <h1>சக்தி எண்ணெய் மற்றும் மாவு ஆலை</h1>
-          <p class="header-sub">Billing / ரசீது தயாரிப்பு</p>
+  <div class="app">
+  <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">ச</div>
+        <div class="brand-text">
+          <div class="brand-name">சக்தி ஆலை</div>
+          <div class="brand-sub">Oil &amp; Flour Mill</div>
         </div>
-        <span class="user-chip" id="userChip"></span>
       </div>
-      <nav class="top-nav" aria-label="Primary">
-        <a class="nav-link active" href="index.html">Billing</a>
-        <a class="nav-link" href="dashboard.html">Dashboard</a>
-        <a class="nav-link" href="products.html" data-role-only="admin">Products</a>
+
+      <p class="nav-label">Workspace</p>
+      <nav class="nav" aria-label="Primary">
+        <a class="nav-link active" href="index.html"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2V2z"/><path d="M9 8h6M9 12h6"/></svg><span>Billing</span></a>
+        <a class="nav-link" href="dashboard.html"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h6V3H3zM15 21h6V11h-6zM3 21h6v-5H3zM15 7h6V3h-6z"/></svg><span>Dashboard</span></a>
+        <a class="nav-link" href="products.html" data-role-only="admin"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 12l9 5 9-5M3 16l9 5 9-5"/></svg><span>Products</span></a>
       </nav>
-    </div>
-  </header>
 
-  <main id="main-content" class="page-shell">
-    <div class="intro-bar print-hide">
-      <div>
-        <h2>Editable Rate Billing</h2>
-        <p>Select product, adjust rate, generate and print receipt.</p>
+      <div class="sidebar-foot">
+        <p class="sidebar-note">Sakthi Mill<br>Billing &amp; Records</p>
       </div>
-      <div class="intro-badges">
-        <span class="badge">Tamil Friendly</span>
-        <span class="badge">Custom Rate</span>
-        <span class="badge">Auto-Save</span>
-      </div>
-    </div>
+    </aside>
 
-    <div class="billing-layout">
-
-      <!-- FORM -->
-      <section class="card form-card print-hide" aria-labelledby="form-title">
-        <p class="card-title">Order Entry</p>
-        <h2 id="form-title" style="margin-bottom:1rem">Customer Bill / வாடிக்கையாளர் பில்</h2>
-
-        <form id="billingForm" novalidate>
-
-          <div class="field-group">
-            <label for="customerName">Customer Name / வாடிக்கையாளர் பெயர்</label>
-            <input id="customerName" type="text" placeholder="Enter customer name" autocomplete="off">
-          </div>
-
-          <div class="field-group">
-            <label for="productSelect">Product / பொருள்</label>
-            <select id="productSelect">
-              <option value="">Select product / பொருள் தேர்வு செய்யவும்</option>
-            </select>
-          </div>
-
-          <div class="field-grid">
-            <div class="field-group">
-              <label for="quantityInput">Quantity / அளவு</label>
-              <input id="quantityInput" type="number" min="0" step="0.01" placeholder="0.00">
-            </div>
-            <div class="field-group">
-              <label for="unitDisplay">Unit / அலகு</label>
-              <input id="unitDisplay" type="text" value="-" readonly>
-            </div>
-          </div>
-
-          <div class="field-grid">
-            <div class="field-group">
-              <label for="rateInput">Rate / விலை</label>
-              <input id="rateInput" type="number" min="0" step="0.01" placeholder="0.00">
-            </div>
-            <div class="field-group">
-              <label>Rate Status</label>
-              <div id="rateStatus" class="status-pill">Default Rate</div>
-            </div>
-          </div>
-
-          <div class="summary-box">
-            <div class="summary-row">
-              <span>Default Rate</span>
-              <strong id="defaultRateDisplay">&#8377;0.00</strong>
-            </div>
-            <div class="summary-row">
-              <span>Current Rate</span>
-              <strong id="currentRateDisplay">&#8377;0.00</strong>
-            </div>
-            <div class="summary-row total">
-              <span>Total / மொத்தம்</span>
-              <strong id="totalDisplay">&#8377;0.00</strong>
-            </div>
-          </div>
-
-          <!-- Track Customer Toggle -->
-          <label class="track-toggle" for="trackCustomer">
-            <input type="checkbox" id="trackCustomer" checked>
-            <span id="trackLabel">Track Customer (data will be saved to dashboard)</span>
-          </label>
-
-          <div class="action-row" style="margin-top:0.85rem">
-            <button type="button" class="btn btn-primary" id="generateReceiptBtn">
-              &#10003; Generate Receipt
-            </button>
-            <button type="button" class="btn btn-secondary" id="printReceiptBtn">
-              &#128438; Print / PDF
-            </button>
-          </div>
-
-          <p class="form-message" id="formMessage" aria-live="polite"></p>
-        </form>
-      </section>
-
-      <!-- RECEIPT PREVIEW -->
-      <aside class="card receipt-card" aria-labelledby="receipt-title">
-        <p class="card-title print-hide">Receipt Preview</p>
-        <div class="receipt-panel" id="receiptPanel">
-          <div class="receipt-header">
-            <h2 id="receipt-title">சக்தி எண்ணெய் மற்றும் மாவு ஆலை</h2>
-            <p>Receipt / ரசீது</p>
-          </div>
-          <div class="receipt-body">
-            <div class="receipt-row"><span>Date &amp; Time</span><strong id="receiptDate">-</strong></div>
-            <div class="receipt-row"><span>Customer / வாடிக்கையாளர்</span><strong id="receiptCustomer">-</strong></div>
-            <div class="receipt-row"><span>Product / பொருள்</span><strong id="receiptProduct">-</strong></div>
-            <div class="receipt-row"><span>Quantity / அளவு</span><strong id="receiptQuantity">-</strong></div>
-            <div class="receipt-row"><span>Rate / விலை</span><strong id="receiptRate">-</strong></div>
-            <div class="receipt-row"><span>Rate Type</span><strong id="receiptRateType">-</strong></div>
-            <div class="receipt-row receipt-total"><span>Total / மொத்தம்</span><strong id="receiptTotal">-</strong></div>
-          </div>
-          <p class="receipt-note">Thank you / நன்றி &#128591;</p>
+    <div class="main-col">
+      <header class="topbar">
+        <div class="topbar-title">
+          <span class="eyebrow">Billing</span>
+          <h1>Create a bill</h1>
         </div>
-      </aside>
+        <div class="topbar-meta">
+          <span class="user-chip" id="userChip"></span>
+        </div>
+      </header>
 
+      <main id="main-content" class="page-shell">
+        <div class="intro-bar print-hide">
+          <div>
+            <h2>New bill</h2>
+            <p>Pick a product, adjust the rate if needed, then generate the receipt.</p>
+          </div>
+          <div class="intro-badges">
+            <span class="badge">Rates editable per bill</span>
+          </div>
+        </div>
+
+        <div class="billing-layout">
+
+          <!-- FORM -->
+          <section class="card form-card print-hide" aria-labelledby="form-title">
+            <p class="card-title">Order entry</p>
+            <h2 id="form-title" style="margin-bottom:1.1rem">வாடிக்கையாளர் பில்</h2>
+
+            <form id="billingForm" novalidate>
+
+              <div class="field-group customer-lookup">
+                <label for="customerName">Customer name / வாடிக்கையாளர் பெயர்</label>
+                <input id="customerName" type="text" placeholder="Type to search or add new" autocomplete="off">
+                <div id="customerSuggestions" class="suggestion-box" role="listbox" aria-label="Matching customers"></div>
+              </div>
+
+              <div class="field-group">
+                <label for="customerPhone">Phone number / தொலைபேசி எண் <span style="color:var(--faint);font-weight:500">— optional</span></label>
+                <input id="customerPhone" type="tel" placeholder="e.g. 9840012345" autocomplete="off">
+                <p class="field-hint" id="customerMatchHint"></p>
+              </div>
+
+              <div class="field-group">
+                <label for="productSelect">Product / பொருள்</label>
+                <select id="productSelect">
+                  <option value="">Select a product / பொருள் தேர்வு செய்யவும்</option>
+                </select>
+              </div>
+
+              <div class="field-grid">
+                <div class="field-group">
+                  <label for="quantityInput">Quantity / அளவு</label>
+                  <input id="quantityInput" type="number" min="0" step="0.01" placeholder="0.00">
+                </div>
+                <div class="field-group">
+                  <label for="unitDisplay">Unit / அலகு</label>
+                  <input id="unitDisplay" type="text" value="-" readonly>
+                </div>
+              </div>
+
+              <div class="field-grid">
+                <div class="field-group">
+                  <label for="rateInput">Rate / விலை</label>
+                  <input id="rateInput" type="number" min="0" step="0.01" placeholder="0.00">
+                </div>
+                <div class="field-group">
+                  <label>Rate status</label>
+                  <div id="rateStatus" class="status-pill">Default rate</div>
+                </div>
+              </div>
+
+              <div class="summary-box">
+                <div class="summary-row">
+                  <span>Default rate</span>
+                  <strong id="defaultRateDisplay">&#8377;0.00</strong>
+                </div>
+                <div class="summary-row">
+                  <span>Current rate</span>
+                  <strong id="currentRateDisplay">&#8377;0.00</strong>
+                </div>
+                <div class="summary-row total">
+                  <span>Total / மொத்தம்</span>
+                  <strong id="totalDisplay">&#8377;0.00</strong>
+                </div>
+              </div>
+
+              <label class="track-toggle" for="trackCustomer">
+                <input type="checkbox" id="trackCustomer" checked>
+                <span id="trackLabel">Track customer (data will be saved to dashboard)</span>
+              </label>
+
+              <div class="action-row" style="margin-top:0.9rem">
+                <button type="button" class="btn btn-primary" id="generateReceiptBtn">Generate receipt</button>
+                <button type="button" class="btn btn-secondary" id="printReceiptBtn">Print / PDF</button>
+              </div>
+
+              <p class="form-message" id="formMessage" aria-live="polite"></p>
+            </form>
+          </section>
+
+          <!-- RECEIPT -->
+          <aside class="card receipt-card" aria-labelledby="receipt-title">
+            <p class="card-title print-hide">Receipt preview</p>
+            <div class="receipt-panel" id="receiptPanel">
+              <div class="receipt-header">
+                <h2 id="receipt-title">சக்தி எண்ணெய் மற்றும் மாவு ஆலை</h2>
+                <p>Receipt <span class="ta">&middot; ரசீது</span></p>
+              </div>
+              <div class="receipt-body">
+                <div class="receipt-row"><span>Date &amp; time</span><strong id="receiptDate">-</strong></div>
+                <div class="receipt-row"><span>Customer</span><strong id="receiptCustomer">-</strong></div>
+                <div class="receipt-row" id="receiptPhoneRow" style="display:none"><span>Phone</span><strong id="receiptPhone">-</strong></div>
+                <div class="receipt-row"><span>Product</span><strong id="receiptProduct">-</strong></div>
+                <div class="receipt-row"><span>Quantity</span><strong id="receiptQuantity">-</strong></div>
+                <div class="receipt-row"><span>Rate</span><strong id="receiptRate">-</strong></div>
+                <div class="receipt-row"><span>Rate type</span><strong id="receiptRateType">-</strong></div>
+                <div class="receipt-row receipt-total"><span>Total / மொத்தம்</span><strong id="receiptTotal">-</strong></div>
+              </div>
+              <p class="receipt-note"><span class="ta">நன்றி</span> &middot; Thank you</p>
+            </div>
+          </aside>
+
+        </div>
+      </main>
     </div>
-  </main>
+  </div>
 
   <script src="auth.js" defer></script>
   <script src="script.js" defer></script>
