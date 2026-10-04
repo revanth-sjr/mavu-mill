@@ -447,6 +447,152 @@ select {
    BILLING
    ============================================================ */
 
+/* Customer Mode Segmented Switch */
+.customer-section-box {
+  margin-bottom: 1.15rem;
+}
+.customer-mode-selector {
+  margin-bottom: 0.8rem;
+}
+.segment-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin-bottom: 0.35rem;
+}
+.segment-pills {
+  display: flex;
+  gap: 0.35rem;
+  background: var(--page);
+  padding: 0.28rem;
+  border-radius: var(--r);
+  border: 1.5px solid var(--line);
+}
+.segment-pill {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: calc(var(--r) - 2px);
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--ui-face);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.segment-pill:hover {
+  color: var(--ink);
+}
+.segment-pill.active {
+  background: var(--paper);
+  color: var(--mill);
+  box-shadow: var(--sh-sm);
+  font-weight: 700;
+}
+.segment-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+[data-theme="dark"] .segment-pill.active {
+  background: #172F22;
+  color: #46D38E;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+/* Selected Customer Card */
+.selected-customer-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  background: var(--wash);
+  border: 1.5px solid var(--wash-deep);
+  border-radius: var(--r);
+  animation: modal-in 0.18s ease;
+}
+[data-theme="dark"] .selected-customer-card {
+  background: #152A20;
+  border-color: #214432;
+}
+.selected-cust-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--mill), var(--sprout));
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 1.05rem;
+  font-family: var(--brand-face);
+  flex-shrink: 0;
+}
+.selected-cust-info {
+  flex: 1;
+  min-width: 0;
+}
+.selected-cust-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.25;
+}
+.selected-cust-meta {
+  font-size: 0.77rem;
+  color: var(--muted);
+  font-family: var(--mono-face);
+  margin-top: 0.15rem;
+}
+.btn-change-customer {
+  background: var(--paper);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+  padding: 0.35rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.btn-change-customer:hover {
+  background: var(--wash);
+  color: var(--mill);
+  border-color: var(--wash-deep);
+}
+
+/* New Customer Container */
+.new-cust-card {
+  padding: 1rem 1.05rem;
+  background: var(--page);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r);
+}
+.new-cust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--mill);
+  background: var(--wash);
+  border: 1px solid var(--wash-deep);
+  padding: 0.22rem 0.6rem;
+  border-radius: 6px;
+  margin-bottom: 0.9rem;
+}
+
 .billing-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
@@ -522,6 +668,30 @@ select {
   font-size: 0.74rem; color: var(--muted);
   font-family: var(--mono-face);
 }
+.suggestion-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.8rem;
+  background: var(--wash);
+  font-size: 0.76rem;
+  color: var(--muted);
+  border-top: 1px solid var(--line-soft);
+}
+.btn-link-select {
+  background: none;
+  border: none;
+  color: var(--mill);
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0 0.2rem;
+  font-size: inherit;
+}
+.btn-link-select:hover {
+  color: var(--sprout);
+}
+
 
 /* ── SIGNATURE: the receipt as a physical slip ───────────────── */
 .receipt-card { padding: 1.25rem; position: sticky; top: 5.2rem; }

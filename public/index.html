@@ -76,17 +76,86 @@
 
             <form id="billingForm" novalidate>
 
-              <div class="field-group customer-lookup">
-                <label for="customerName">Customer name / வாடிக்கையாளர் பெயர்</label>
-                <input id="customerName" type="text" placeholder="Type to search or add new" autocomplete="off">
-                <div id="customerSuggestions" class="suggestion-box" role="listbox" aria-label="Matching customers"></div>
+              <!-- CUSTOMER SELECTION / REGISTRATION -->
+              <div class="customer-section-box">
+                <div class="customer-mode-selector">
+                  <span class="segment-label">Customer type / வாடிக்கையாளர் வகை</span>
+                  <div class="segment-pills" role="radiogroup" aria-label="Customer Type">
+                    <button type="button" class="segment-pill active" id="pillExistingCustomer">
+                      <svg class="segment-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                      </svg>
+                      <span>Existing / பழைய வாடிக்கையாளர்</span>
+                    </button>
+                    <button type="button" class="segment-pill" id="pillNewCustomer">
+                      <svg class="segment-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="8.5" cy="7" r="4"></circle>
+                        <line x1="20" y1="8" x2="20" y2="14"></line>
+                        <line x1="23" y1="11" x2="17" y2="11"></line>
+                      </svg>
+                      <span>New / புதிய வாடிக்கையாளர்</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 1. EXISTING CUSTOMER VIEW -->
+                <div id="existingCustomerContainer" class="customer-mode-panel">
+                  <div id="customerSearchWrap" class="field-group customer-lookup">
+                    <label for="existingCustomerSearch">Select customer / வாடிக்கையாளரைத் தேர்வு செய்க</label>
+                    <div style="position:relative;">
+                      <input id="existingCustomerSearch" type="text" placeholder="Search by name or phone (e.g. Murugan or 9840...)" autocomplete="off">
+                      <div id="customerSuggestions" class="suggestion-box" role="listbox" aria-label="Matching customers"></div>
+                    </div>
+                    <div class="field-hint" style="display:flex;justify-content:space-between;align-items:center;">
+                      <span>Type name or phone to search registered customers</span>
+                      <button type="button" id="btnBrowseAllCustomers" style="background:none;border:none;color:var(--mill);cursor:pointer;font-weight:600;font-size:0.75rem;padding:0;">Browse list &#8595;</button>
+                    </div>
+                  </div>
+
+                  <div id="selectedCustomerCard" class="selected-customer-card" style="display:none;">
+                    <div class="selected-cust-avatar" id="selectedCustAvatar">M</div>
+                    <div class="selected-cust-info">
+                      <div class="selected-cust-name" id="selectedCustName">Customer</div>
+                      <div class="selected-cust-meta" id="selectedCustMeta">No phone · 0 orders</div>
+                    </div>
+                    <button type="button" class="btn-change-customer" id="btnChangeCustomer" title="Choose a different customer">Change</button>
+                  </div>
+                </div>
+
+                <!-- 2. NEW CUSTOMER VIEW -->
+                <div id="newCustomerContainer" class="customer-mode-panel" style="display:none;">
+                  <div class="new-cust-card">
+                    <div class="new-cust-badge">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                      <span>New Customer Registration / புதிய பதிவு</span>
+                    </div>
+
+                    <div class="field-group">
+                      <label for="newCustName">Customer name / வாடிக்கையாளர் பெயர் <span style="color:var(--clay)">*</span></label>
+                      <input id="newCustName" type="text" placeholder="Enter customer full name" autocomplete="off" required>
+                    </div>
+
+                    <div class="field-group" style="margin-bottom:0.6rem;">
+                      <label for="newCustPhone">Phone number / தொலைபேசி எண் <span style="color:var(--faint);font-weight:500">— for visit tracking</span></label>
+                      <input id="newCustPhone" type="tel" placeholder="10-digit mobile number (e.g. 9840012345)" autocomplete="off">
+                      <p class="field-hint" id="newCustomerDuplicateHint" style="display:none;color:var(--amber);margin-top:0.35rem;"></p>
+                    </div>
+
+                    <div style="font-size:0.78rem;color:var(--muted);display:flex;align-items:center;gap:0.4rem;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--mill);flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
+                      <span>New customer profile will be registered and tracked in the mill directory.</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div class="field-group">
-                <label for="customerPhone">Phone number / தொலைபேசி எண் <span style="color:var(--faint);font-weight:500">— optional</span></label>
-                <input id="customerPhone" type="tel" placeholder="e.g. 9840012345" autocomplete="off">
-                <p class="field-hint" id="customerMatchHint"></p>
-              </div>
+              <!-- Hidden inputs keeping standard customerName and customerPhone values for form submission -->
+              <input type="hidden" id="customerName" value="">
+              <input type="hidden" id="customerPhone" value="">
 
               <div class="field-group">
                 <label for="productSelect">Product / பொருள்</label>

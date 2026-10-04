@@ -67,4 +67,37 @@ async function findOrCreateCustomer(name, phone) {
   return result.insertId;
 }
 
-module.exports = { list, findOrCreateCustomer };
+async function create(req, res) {
+  const { name, phone } = req.body || {};
+  if (!name || !name.trim()) {
+    return res.status(400).json({ message: 'Customer name is required.' });
+  }
+
+  let cleanPhone = null;
+  if (phone !== undefined && phone !== null && String(phone).trim() !== '') {
+    cleanPhone = String(phone).trim();
+    if (!/^[0-9+\-\s]{7,15}$/.test(cleanPhone)) {
+      return res.status(400).json({ message: 'Enter a valid phone number, or leave it blank.' });
+    }
+    const [existing] = await pool.query('SELECT id, name, phone FROM customers WHERE phone = ?', [cleanPhone]);
+    if (existing.length) {
+      return res.status(409).json({
+        message: `Phone number is already registered for ${existing[0].name}.`,
+        customer: existing[0]
+      });
+    }
+  }
+
+  const [result] = await pool.query(
+    'INSERT INTO customers (name, phone) VALUES (?, ?)',
+    [name.trim(), cleanPhone]
+  );
+
+  res.status(201).json({
+    ok: true,
+    message: 'Customer registered successfully.',
+    customer: { id: result.insertId, name: name.trim(), phone: cleanPhone }
+  });
+}
+
+module.exports = { list, create, findOrCreateCustomer };
