@@ -1138,9 +1138,18 @@ select {
   border: 2px solid #F0D9AA;
 }
 .session-modal-icon {
-  font-size: 2.4rem;
-  line-height: 1;
-  margin-bottom: 0.75rem;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--amber-wash);
+  color: var(--amber);
+  border: 1.5px solid #F0D9AA;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 1rem;
+}
+.session-modal-icon svg {
+  display: block;
 }
 .session-modal-title {
   font-size: 1.25rem;
@@ -1242,7 +1251,13 @@ select {
 .chip-theme-btn:hover {
   background: var(--wash);
   border-color: var(--wash-deep);
-  transform: rotate(18deg) scale(1.08);
+  color: var(--mill);
+  transform: rotate(15deg) scale(1.08);
+}
+.theme-svg-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
 /* Nav Settings button in sidebar */

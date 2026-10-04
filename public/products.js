@@ -120,7 +120,7 @@ async function renderUserList() {
       <div class="product-rate-block">
         <span class="role-pill role-${u.role}">${u.role === 'admin' ? 'Admin' : 'Staff'}</span>
         ${u.id === currentUserId ? '' : `
-          <button type="button" class="btn-mini btn-reset-user-pwd" data-id="${u.id}" data-name="${u.name}" title="Reset password for ${u.name}" style="font-size:0.72rem;padding:0.2rem 0.5rem;">&#128273; Reset</button>
+          <button type="button" class="btn-mini btn-reset-user-pwd" data-id="${u.id}" data-name="${u.name}" title="Reset password for ${u.name}" style="font-size:0.72rem;padding:0.2rem 0.5rem;display:inline-flex;align-items:center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><path d="M21 2l-2 2m-1.5 1.5L14 9l-1.5-1.5L11 9l-1.5-1.5L8 9c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6l7-7-1.5-1.5z"/><circle cx="7.5" cy="15.5" r="1.5"/></svg>Reset</button>
           <button type="button" class="btn-mini btn-delete-product" data-id="${u.id}" aria-label="Remove ${u.name}">&#10005;</button>
         `}
       </div>

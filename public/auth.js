@@ -11,6 +11,16 @@
 
 const API_BASE = '/api';
 
+// ── SVG Icon Registry (clean, modern, no emojis) ───────────────
+const ICONS = {
+  sun: '<svg class="theme-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>',
+  moon: '<svg class="theme-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
+  clock: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+  key: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:4px;"><path d="M21 2l-2 2m-1.5 1.5L14 9l-1.5-1.5L11 9l-1.5-1.5L8 9c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6l7-7-1.5-1.5z"/><circle cx="7.5" cy="15.5" r="1.5"/></svg>',
+  alert: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+  check: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px;"><polyline points="20 6 9 17 4 12"/></svg>'
+};
+
 // ── Theme Management (Instant + Persisted) ──────────────────────
 function getTheme() {
   return localStorage.getItem('mavu_theme') || (
@@ -26,7 +36,7 @@ function setTheme(theme) {
   // Update any theme icons
   const iconSpan = document.querySelector('#chipThemeBtn .theme-icon');
   if (iconSpan) {
-    iconSpan.textContent = target === 'dark' ? '☀️' : '🌙';
+    iconSpan.innerHTML = target === 'dark' ? ICONS.sun : ICONS.moon;
   }
   const btn = document.getElementById('chipThemeBtn');
   if (btn) {
@@ -109,7 +119,8 @@ function showToast(message, isError = false) {
   }
   const toast = document.createElement('div');
   toast.className = 'toast-item' + (isError ? ' toast-error' : '');
-  toast.innerHTML = (isError ? '&#9888; ' : '') + message;
+  const cleanMsg = message.replace(/^[✓\u2713]\s*/, '');
+  toast.innerHTML = (isError ? ICONS.alert : ICONS.check) + `<span>${cleanMsg}</span>`;
   container.appendChild(toast);
   setTimeout(() => {
     toast.style.opacity = '0';
@@ -251,7 +262,7 @@ function ensureSettingsModal() {
                 </div>
               </div>
               <div class="theme-option-info">
-                <span class="theme-option-title">☀️ Light theme</span>
+                <span class="theme-option-title">${ICONS.sun} Light theme</span>
                 <span class="theme-selected-pill">Active</span>
               </div>
               <div class="theme-option-desc">
@@ -272,7 +283,7 @@ function ensureSettingsModal() {
                 </div>
               </div>
               <div class="theme-option-info">
-                <span class="theme-option-title">🌙 Dark theme</span>
+                <span class="theme-option-title">${ICONS.moon} Dark theme</span>
                 <span class="theme-selected-pill">Active</span>
               </div>
               <div class="theme-option-desc">
@@ -598,7 +609,7 @@ function ensureSessionWarningModal() {
 
   overlay.innerHTML = `
     <div class="modal session-modal-card">
-      <div class="session-modal-icon">&#9203;</div>
+      <div class="session-modal-icon">${ICONS.clock}</div>
       <h2 id="sessionWarningTitle" class="session-modal-title">Session Expiring Soon / அமர்வு எச்சரிக்கை</h2>
       <p class="session-modal-text">
         Your session will expire in <strong id="sessionWarningTimer" class="session-timer-badge">05:00</strong> due to security timeout. Would you like to stay signed in?
@@ -725,7 +736,7 @@ function renderUserChip(user) {
 
     chip.innerHTML = `
       <button type="button" class="chip-theme-btn" id="chipThemeBtn" title="${isDark ? 'Switch to Light theme' : 'Switch to Dark theme'}" aria-label="Toggle theme">
-        <span class="theme-icon">${isDark ? '☀️' : '🌙'}</span>
+        <span class="theme-icon">${isDark ? ICONS.sun : ICONS.moon}</span>
       </button>
       <button type="button" class="chip-action" id="chipSettingsBtn" title="Open Settings &amp; Profile">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:4px;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings
