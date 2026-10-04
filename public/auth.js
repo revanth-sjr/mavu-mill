@@ -107,15 +107,27 @@ if (loginForm) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
       });
-      const data = await res.json();
+      const text = await res.text();
+      let data = null;
+      try {
+        data = JSON.parse(text);
+      } catch (parseErr) {
+        if (text.includes('<!DOCTYPE html>') || text.includes('sso-api') || text.includes('Vercel')) {
+          loginError.textContent = 'Vercel Deployment Protection is enabled. Please disable "Vercel Authentication" under Project Settings > Deployment Protection.';
+          return;
+        }
+        throw parseErr;
+      }
+
       if (!res.ok) {
-        loginError.textContent = data.message || 'Invalid username or password.';
+        loginError.textContent = (data && data.message) || 'Invalid username or password.';
         return;
       }
       setAuth(data.token, data.user);
       window.location.href = 'index.html';
     } catch (err) {
-      loginError.textContent = 'Could not reach the server. Please check your connection and try again.';
+      console.error('Login error:', err);
+      loginError.textContent = err.message || 'Could not reach the server. Please check your connection and try again.';
     } finally {
       if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Sign in'; }
     }
