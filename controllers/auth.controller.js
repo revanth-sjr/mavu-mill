@@ -3,7 +3,7 @@ const pool = require('../config/db');
 const { signToken } = require('../utils/jwt');
 
 async function login(req, res) {
-  const { username, password } = req.body || {};
+  const { username, password, rememberMe } = req.body || {};
   if (!username || !password) {
     return res.status(400).json({ message: 'Username and password are required.' });
   }
@@ -15,15 +15,62 @@ async function login(req, res) {
   const ok = await bcrypt.compare(password, user.password_hash);
   if (!ok) return res.status(401).json({ message: 'Invalid username or password.' });
 
-  const token = signToken({ id: user.id });
+  const token = signToken({ id: user.id }, !!rememberMe);
   res.json({
     token,
-    user: { id: user.id, username: user.username, name: user.name, role: user.role }
+    user: { id: user.id, username: user.username, name: user.name, role: user.role },
+    expiresIn: rememberMe ? '30d' : '12h'
   });
 }
 
 async function me(req, res) {
   res.json({ user: req.user });
+}
+
+async function changePassword(req, res) {
+  const { currentPassword, newPassword } = req.body || {};
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ message: 'Current password and new password are required.' });
+  }
+  if (newPassword.length < 6) {
+    return res.status(400).json({ message: 'New password must be at least 6 characters long.' });
+  }
+
+  const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [req.user.id]);
+  const user = rows[0];
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+
+  const match = await bcrypt.compare(currentPassword, user.password_hash);
+  if (!match) {
+    return res.status(401).json({ message: 'Current password is incorrect.' });
+  }
+
+  const newHash = await bcrypt.hash(newPassword, 10);
+  await pool.query('UPDATE users SET password_hash = ? WHERE id = ?', [newHash, req.user.id]);
+
+  const token = signToken({ id: user.id });
+  res.json({ ok: true, message: 'Password changed successfully.', token });
+}
+
+async function resetUserPassword(req, res) {
+  const id = Number(req.params.id);
+  const { newPassword } = req.body || {};
+  if (!newPassword || newPassword.length < 6) {
+    return res.status(400).json({ message: 'New password must be at least 6 characters long.' });
+  }
+
+  const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
+  if (!rows.length) return res.status(404).json({ message: 'User not found.' });
+
+  const newHash = await bcrypt.hash(newPassword, 10);
+  await pool.query('UPDATE users SET password_hash = ? WHERE id = ?', [newHash, id]);
+  res.json({ ok: true, message: 'User password updated successfully.' });
+}
+
+async function refreshToken(req, res) {
+  const { rememberMe } = req.body || {};
+  const token = signToken({ id: req.user.id }, !!rememberMe);
+  res.json({ token, user: req.user, message: 'Session extended.' });
 }
 
 async function listUsers(req, res) {
@@ -78,4 +125,13 @@ async function deleteUser(req, res) {
   res.json({ ok: true });
 }
 
-module.exports = { login, me, listUsers, register, deleteUser };
+module.exports = {
+  login,
+  me,
+  changePassword,
+  resetUserPassword,
+  refreshToken,
+  listUsers,
+  register,
+  deleteUser
+};

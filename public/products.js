@@ -119,9 +119,34 @@ async function renderUserList() {
       </div>
       <div class="product-rate-block">
         <span class="role-pill role-${u.role}">${u.role === 'admin' ? 'Admin' : 'Staff'}</span>
-        ${u.id === currentUserId ? '' : `<button type="button" class="btn-mini btn-delete-product" data-id="${u.id}" aria-label="Remove ${u.name}">&#10005;</button>`}
+        ${u.id === currentUserId ? '' : `
+          <button type="button" class="btn-mini btn-reset-user-pwd" data-id="${u.id}" data-name="${u.name}" title="Reset password for ${u.name}" style="font-size:0.72rem;padding:0.2rem 0.5rem;">&#128273; Reset</button>
+          <button type="button" class="btn-mini btn-delete-product" data-id="${u.id}" aria-label="Remove ${u.name}">&#10005;</button>
+        `}
       </div>
     </div>`).join('') : emptyState('No accounts yet.');
+
+  document.querySelectorAll('#userListBody .btn-reset-user-pwd').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const name = btn.dataset.name;
+      const newPassword = prompt(`Enter new password for "${name}" (minimum 6 characters):`);
+      if (newPassword === null) return;
+      if (!newPassword || newPassword.length < 6) {
+        alert('Password must be at least 6 characters long.');
+        return;
+      }
+      try {
+        await apiFetch(`/auth/users/${id}/password`, {
+          method: 'PUT',
+          body: JSON.stringify({ newPassword })
+        });
+        showMsg('userFormMessage', `\u2713 Password for "${name}" updated successfully.`);
+      } catch (e) {
+        showMsg('userFormMessage', e.message, true);
+      }
+    });
+  });
 
   document.querySelectorAll('#userListBody .btn-delete-product').forEach(btn => {
     btn.addEventListener('click', async () => {

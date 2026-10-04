@@ -8,6 +8,12 @@
     // If a token is already saved, quickly verify it with the server
     // before deciding whether to skip the sign-in form.
     (function () {
+      var urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('expired') || urlParams.get('logout')) {
+        localStorage.removeItem('mavu_token');
+        localStorage.removeItem('mavu_user');
+        return;
+      }
       var token = localStorage.getItem('mavu_token');
       if (!token) return;
       fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + token } })
@@ -45,6 +51,8 @@
           <p class="header-sub">உள்நுழைய</p>
         </div>
 
+        <div id="sessionNotice" class="auth-alert" style="display:none;" role="status"></div>
+
         <form id="loginForm" novalidate>
           <div class="field-group">
             <label for="loginUsername">Username / பயனர்பெயர்</label>
@@ -53,6 +61,13 @@
           <div class="field-group">
             <label for="loginPassword">Password / கடவுச்சொல்</label>
             <input id="loginPassword" type="password" placeholder="Your password" autocomplete="current-password" required>
+          </div>
+
+          <div class="auth-options">
+            <label class="remember-label" for="loginRememberMe">
+              <input type="checkbox" id="loginRememberMe" name="rememberMe">
+              <span>Remember me (30 days) / என்னை நினைவில் கொள்க</span>
+            </label>
           </div>
 
           <button type="submit" class="btn btn-primary" id="loginSubmitBtn" style="width:100%;margin-top:0.5rem">Sign in</button>
