@@ -62,7 +62,10 @@ app.use((err, req, res, next) => {
 // run any SQL by hand before the first start. Connects without selecting a
 // database, creates it, then closes — the main pool takes over from there.
 async function ensureDatabaseExists() {
-  if (process.env.DATABASE_URL) return; // hosted providers create it for you
+  // Hosted providers create the database for you and require SSL/encrypted connections
+  if (process.env.DATABASE_URL || String(process.env.DB_SSL).toLowerCase() === 'true') {
+    return;
+  }
 
   const mysql = require('mysql2/promise');
   const dbName = process.env.DB_NAME || 'mavu_mill';

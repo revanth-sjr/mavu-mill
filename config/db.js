@@ -12,17 +12,16 @@ function buildSslOption() {
   // it — this is the most secure option and what Aiven recommends.
   const caPath = process.env.DB_SSL_CA_PATH;
   if (caPath && fs.existsSync(caPath)) {
-    return { ca: fs.readFileSync(caPath, 'utf8'), rejectUnauthorized: true };
+    return { ca: fs.readFileSync(caPath, 'utf8'), rejectUnauthorized: true, minVersion: 'TLSv1.2' };
   }
 
   // Some hosts inject the certificate contents directly as an env var.
   if (process.env.DB_SSL_CA) {
-    return { ca: process.env.DB_SSL_CA, rejectUnauthorized: true };
+    return { ca: process.env.DB_SSL_CA, rejectUnauthorized: true, minVersion: 'TLSv1.2' };
   }
 
-  // Fall back to encrypted-but-unverified. The connection is still encrypted,
-  // but the server's identity isn't checked, so prefer a CA cert when you can.
-  return { rejectUnauthorized: false };
+  // Fall back to encrypted-but-unverified with TLS 1.2 minimum (required by TiDB Cloud).
+  return { rejectUnauthorized: false, minVersion: 'TLSv1.2' };
 }
 
 const poolOptions = {
