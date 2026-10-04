@@ -37,14 +37,12 @@ app.use('/api/orders', ordersRoutes);
 app.use('/api/customers', customersRoutes);
 
 // Serve the frontend from this same server (same origin — no CORS issues).
-// index:false so that "/" falls through to the handler below and lands on
-// the login page, rather than express.static auto-serving index.html.
 const PUBLIC_DIR = path.join(__dirname, 'public');
-app.use(express.static(PUBLIC_DIR, { index: false }));
+app.use(express.static(PUBLIC_DIR));
 
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
-  const file = req.path === '/' ? 'login.html' : req.path;
+  const file = req.path === '/' ? 'index.html' : req.path;
   res.sendFile(path.join(PUBLIC_DIR, file), err => {
     if (err) next();
   });
