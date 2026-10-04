@@ -5,6 +5,7 @@ const ctrl = require('../controllers/auth.controller');
 
 router.post('/login', ctrl.login);
 router.get('/me', authenticate, ctrl.me);
+router.put('/profile', authenticate, ctrl.updateProfile);
 router.post('/refresh', authenticate, ctrl.refreshToken);
 router.put('/change-password', authenticate, ctrl.changePassword);
 router.get('/users', authenticate, requireAdmin, ctrl.listUsers);

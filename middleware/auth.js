@@ -12,7 +12,7 @@ async function authenticate(req, res, next) {
   try {
     const payload = verifyToken(token);
     const [rows] = await pool.query(
-      'SELECT id, username, name, role FROM users WHERE id = ?',
+      'SELECT id, username, name, role, created_at FROM users WHERE id = ?',
       [payload.id]
     );
     if (!rows.length) return res.status(401).json({ message: 'Account no longer exists.' });

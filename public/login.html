@@ -8,6 +8,13 @@
     // If a token is already saved, quickly verify it with the server
     // before deciding whether to skip the sign-in form.
     (function () {
+      var t = localStorage.getItem('mavu_theme');
+      if (t === 'dark' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+
       var urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('expired') || urlParams.get('logout')) {
         localStorage.removeItem('mavu_token');

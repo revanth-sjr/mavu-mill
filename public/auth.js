@@ -1,14 +1,59 @@
 /* ============================================================
-   சக்தி எண்ணெய் மற்றும் மாவு ஆலை — Auth & Session Management
-   Handles JWT token lifecycle:
-   - 12h default expiration / 30d "Remember Me"
-   - Auto-logout warning with 5-minute interactive countdown
-   - Token refresh without losing active work
-   - Self-service password change modal
-   - Admin password reset support
+   சக்தி எண்ணெய் மற்றும் மாவு ஆலை — Auth & Settings Management
+   Features:
+   - Modern Settings Modal (Profile, Light/Dark Theme, Password, Logout)
+   - Real-time Theme Switcher (Light & Dark with persistence)
+   - User Profile Information & Name Update
+   - Self-service Change Password
+   - 12h Default Expiration / 30d Remember Me
+   - Auto-Logout Warning & One-Click Session Extension
    ============================================================ */
 
 const API_BASE = '/api';
+
+// ── Theme Management (Instant + Persisted) ──────────────────────
+function getTheme() {
+  return localStorage.getItem('mavu_theme') || (
+    window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  );
+}
+
+function setTheme(theme) {
+  const target = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', target);
+  localStorage.setItem('mavu_theme', target);
+
+  // Update any theme icons
+  const iconSpan = document.querySelector('#chipThemeBtn .theme-icon');
+  if (iconSpan) {
+    iconSpan.textContent = target === 'dark' ? '☀️' : '🌙';
+  }
+  const btn = document.getElementById('chipThemeBtn');
+  if (btn) {
+    btn.setAttribute('title', target === 'dark' ? 'Switch to Light theme' : 'Switch to Dark theme');
+  }
+
+  // Update theme cards in settings modal if open
+  document.querySelectorAll('.theme-card-option').forEach(card => {
+    if (card.dataset.themeVal === target) card.classList.add('active');
+    else card.classList.remove('active');
+  });
+
+  window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: target } }));
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || getTheme();
+  const next = current === 'dark' ? 'light' : 'dark';
+  setTheme(next);
+  showToast(`Switched to ${next === 'dark' ? 'Dark' : 'Light'} theme / ${next === 'dark' ? 'இரவுப் பயன்முறை' : 'பகற்பயன்முறை'}`);
+}
+
+// Initial theme apply
+(function initTheme() {
+  const current = getTheme();
+  document.documentElement.setAttribute('data-theme', current);
+})();
 
 // ── Token / cached-user storage ─────────────────────────────────
 function getToken() { return localStorage.getItem('mavu_token'); }
@@ -70,7 +115,7 @@ function showToast(message, isError = false) {
     toast.style.opacity = '0';
     toast.style.transition = 'opacity 0.3s ease';
     setTimeout(() => toast.remove(), 300);
-  }, 3500);
+  }, 3200);
 }
 
 // ── Fetch wrapper: attaches the token, parses JSON, handles auth errors ──
@@ -95,6 +140,447 @@ async function apiFetch(path, options = {}) {
     throw new Error((data && data.message) || `Request failed (${res.status})`);
   }
   return data;
+}
+
+// ── Settings & Profile Modal ────────────────────────────────────
+function ensureSettingsModal() {
+  if (document.getElementById('settingsModal')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'settingsModal';
+  overlay.className = 'modal-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-labelledby', 'settingsModalTitle');
+
+  overlay.innerHTML = `
+    <div class="modal modal-settings">
+      <div class="settings-header">
+        <div class="settings-title-row">
+          <div class="settings-icon-bubble">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </div>
+          <div>
+            <h2 id="settingsModalTitle">Settings &amp; Profile</h2>
+            <p class="header-sub">அமைப்புகள் மற்றும் கணக்கு விவரங்கள்</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close" id="settingsModalClose" aria-label="Close">&#10005;</button>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="settings-tabs" role="tablist">
+        <button type="button" class="settings-tab-btn active" data-tab="profile" role="tab">
+          <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Profile</span>
+        </button>
+        <button type="button" class="settings-tab-btn" data-tab="appearance" role="tab">
+          <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          <span>Appearance</span>
+        </button>
+        <button type="button" class="settings-tab-btn" data-tab="password" role="tab">
+          <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>Password</span>
+        </button>
+        <button type="button" class="settings-tab-btn" data-tab="account" role="tab">
+          <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span>Account &amp; Logout</span>
+        </button>
+      </div>
+
+      <!-- Pane 1: Profile -->
+      <div class="settings-pane active" id="pane-profile" role="tabpanel">
+        <div class="profile-card-hero">
+          <div class="profile-avatar-circle" id="settingsAvatar">ச</div>
+          <div class="profile-meta">
+            <h3 id="settingsProfileName">—</h3>
+            <div class="profile-username-tag" id="settingsProfileUsername">@username</div>
+            <span class="role-pill" id="settingsProfileRole">Staff</span>
+          </div>
+        </div>
+
+        <form id="profileUpdateForm" novalidate>
+          <div class="field-group">
+            <label for="editDisplayName">Display name / உங்கள் பெயர்</label>
+            <input id="editDisplayName" type="text" placeholder="Your full name" required>
+          </div>
+          <p class="form-message" id="profileUpdateMsg" style="margin:0.3rem 0;"></p>
+          <div style="display:flex; justify-content:flex-end; margin-top:0.8rem;">
+            <button type="submit" class="btn btn-primary" id="btnSaveProfile">Save profile</button>
+          </div>
+        </form>
+
+        <div class="profile-grid-info">
+          <div class="profile-stat-box">
+            <div class="profile-stat-label">Organization / ஆலை</div>
+            <div class="profile-stat-val">சக்தி எண்ணெய் &amp; மாவு ஆலை</div>
+          </div>
+          <div class="profile-stat-box">
+            <div class="profile-stat-label">Account Role</div>
+            <div class="profile-stat-val" id="profileRoleDetail">Administrator</div>
+          </div>
+          <div class="profile-stat-box">
+            <div class="profile-stat-label">Registered Since</div>
+            <div class="profile-stat-val" id="profileCreatedDetail">—</div>
+          </div>
+          <div class="profile-stat-box">
+            <div class="profile-stat-label">System Platform</div>
+            <div class="profile-stat-val">Vercel Cloud Serverless</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pane 2: Appearance (Theme) -->
+      <div class="settings-pane" id="pane-appearance" role="tabpanel">
+        <div>
+          <h3 style="font-size:1.02rem;margin-bottom:0.2rem;">Theme preferences / வண்ண தீம்</h3>
+          <p style="font-size:0.84rem;color:var(--muted);margin-bottom:1.1rem;">
+            Choose a visual appearance for your counter display. Settings are saved per device.
+          </p>
+
+          <div class="theme-selector-grid">
+            <!-- Light Theme Option -->
+            <div class="theme-card-option" data-theme-val="light" id="themeCardLight">
+              <div class="theme-card-preview theme-preview-light">
+                <div class="theme-prev-bar">
+                  <div style="width:24px;height:6px;background:#16704A;border-radius:3px;"></div>
+                  <div style="width:14px;height:14px;background:#E8F3ED;border-radius:50%;"></div>
+                </div>
+                <div class="theme-prev-content">
+                  <div class="theme-prev-box"></div>
+                  <div class="theme-prev-box" style="flex:0.8;"></div>
+                </div>
+              </div>
+              <div class="theme-option-info">
+                <span class="theme-option-title">☀️ Light theme</span>
+                <span class="theme-selected-pill">Active</span>
+              </div>
+              <div class="theme-option-desc">
+                Clean daylight aesthetic with forest green tones. Ideal for well-lit counters.
+              </div>
+            </div>
+
+            <!-- Dark Theme Option -->
+            <div class="theme-card-option" data-theme-val="dark" id="themeCardDark">
+              <div class="theme-card-preview theme-preview-dark">
+                <div class="theme-prev-bar">
+                  <div style="width:24px;height:6px;background:#2BA86D;border-radius:3px;"></div>
+                  <div style="width:14px;height:14px;background:#1D3328;border-radius:50%;"></div>
+                </div>
+                <div class="theme-prev-content">
+                  <div class="theme-prev-box"></div>
+                  <div class="theme-prev-box" style="flex:0.8;"></div>
+                </div>
+              </div>
+              <div class="theme-option-info">
+                <span class="theme-option-title">🌙 Dark theme</span>
+                <span class="theme-selected-pill">Active</span>
+              </div>
+              <div class="theme-option-desc">
+                Sleek emerald midnight palette. Reduces eye strain during evening counter shifts.
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:0.9rem 1.1rem;background:var(--page);border:1px solid var(--line);border-radius:var(--r);">
+            <div>
+              <strong style="font-size:0.88rem;color:var(--ink);">Quick Toggle</strong>
+              <div style="font-size:0.78rem;color:var(--muted)">You can also click the sun/moon icon in the top header at any time.</div>
+            </div>
+            <button type="button" class="btn btn-secondary" id="btnToggleThemeSetting" style="min-height:36px;padding:0 0.9rem;font-size:0.82rem;">
+              Switch to <span id="themeToggleTarget">Dark</span> Mode
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pane 3: Password -->
+      <div class="settings-pane" id="pane-password" role="tabpanel">
+        <div>
+          <h3 style="font-size:1.02rem;margin-bottom:0.2rem;">Change your password / கடவுச்சொல்லை மாற்று</h3>
+          <p style="font-size:0.84rem;color:var(--muted);margin-bottom:1.1rem;">
+            Keep your account secure with a strong password of at least 6 characters.
+          </p>
+
+          <form id="settingsChangePasswordForm" novalidate>
+            <div class="field-group">
+              <label for="settingsCurrentPassword">Current password / தற்போதைய கடவுச்சொல்</label>
+              <input id="settingsCurrentPassword" type="password" placeholder="Enter current password" autocomplete="current-password" required>
+            </div>
+
+            <div class="field-group">
+              <label for="settingsNewPassword">New password / புதிய கடவுச்சொல்</label>
+              <input id="settingsNewPassword" type="password" placeholder="Minimum 6 characters" autocomplete="new-password" minlength="6" required>
+            </div>
+
+            <div class="field-group">
+              <label for="settingsConfirmPassword">Confirm new password / புதிய கடவுச்சொல்லை உறுதிப்படுத்து</label>
+              <input id="settingsConfirmPassword" type="password" placeholder="Re-type new password" autocomplete="new-password" minlength="6" required>
+            </div>
+
+            <p class="form-message" id="settingsPasswordMsg" style="margin:0.4rem 0;"></p>
+
+            <div style="display:flex; justify-content:flex-end; gap:0.6rem; margin-top:1.1rem;">
+              <button type="submit" class="btn btn-primary" id="btnSettingsPasswordSubmit">Update password</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Pane 4: Account & Logout -->
+      <div class="settings-pane" id="pane-account" role="tabpanel">
+        <div>
+          <div class="session-info-card">
+            <div>
+              <div class="session-stat-heading">Active Session / தற்போதைய அமர்வு</div>
+              <div class="session-stat-text">Token remaining: <strong id="settingsSessionTimerBadge" class="session-timer-badge">--:--</strong></div>
+            </div>
+            <button type="button" class="btn btn-secondary" id="btnSettingsExtendSession" style="min-height:38px;font-size:0.84rem;">
+              Extend session
+            </button>
+          </div>
+
+          <div class="danger-zone-card">
+            <div class="danger-zone-text">
+              <h4>Sign out / கணக்கிலிருந்து வெளியேறு</h4>
+              <p>End your current session on this device. You will need to sign in again to access the counter.</p>
+            </div>
+            <button type="button" class="btn-danger-logout" id="btnSettingsLogout">
+              Logout now
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  // Tab switching
+  overlay.querySelectorAll('.settings-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      overlay.querySelectorAll('.settings-tab-btn').forEach(b => b.classList.remove('active'));
+      overlay.querySelectorAll('.settings-pane').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const pane = document.getElementById(`pane-${btn.dataset.tab}`);
+      if (pane) pane.classList.add('active');
+    });
+  });
+
+  // Modal close handlers
+  const closeBtn = document.getElementById('settingsModalClose');
+  if (closeBtn) closeBtn.addEventListener('click', closeSettingsModal);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeSettingsModal();
+  });
+
+  // Theme option clicks
+  document.getElementById('themeCardLight').addEventListener('click', () => {
+    setTheme('light');
+    updateThemeSelectorUI();
+  });
+  document.getElementById('themeCardDark').addEventListener('click', () => {
+    setTheme('dark');
+    updateThemeSelectorUI();
+  });
+  document.getElementById('btnToggleThemeSetting').addEventListener('click', () => {
+    toggleTheme();
+    updateThemeSelectorUI();
+  });
+
+  // Profile Name Update Form
+  document.getElementById('profileUpdateForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nameInput = document.getElementById('editDisplayName');
+    const msg = document.getElementById('profileUpdateMsg');
+    const btn = document.getElementById('btnSaveProfile');
+    const newName = nameInput.value.trim();
+
+    if (!newName) {
+      msg.textContent = 'Please enter a name.';
+      msg.style.color = 'var(--clay)';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    try {
+      const res = await apiFetch('/auth/profile', {
+        method: 'PUT',
+        body: JSON.stringify({ name: newName })
+      });
+      setAuth(getToken(), res.user);
+      msg.textContent = '✓ Profile updated successfully!';
+      msg.style.color = 'var(--mill)';
+      renderUserChip(res.user);
+      populateSettingsModal(res.user);
+      showToast('✓ Profile updated successfully');
+      setTimeout(() => { msg.textContent = ''; }, 2500);
+    } catch (err) {
+      msg.textContent = err.message || 'Failed to update profile.';
+      msg.style.color = 'var(--clay)';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save profile';
+    }
+  });
+
+  // Password Change Form inside Settings
+  document.getElementById('settingsChangePasswordForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const curr = document.getElementById('settingsCurrentPassword').value;
+    const newP = document.getElementById('settingsNewPassword').value;
+    const conf = document.getElementById('settingsConfirmPassword').value;
+    const msg = document.getElementById('settingsPasswordMsg');
+    const btn = document.getElementById('btnSettingsPasswordSubmit');
+
+    msg.textContent = '';
+    if (!curr) {
+      msg.textContent = 'Current password is required.';
+      msg.style.color = 'var(--clay)';
+      return;
+    }
+    if (!newP || newP.length < 6) {
+      msg.textContent = 'New password must be at least 6 characters.';
+      msg.style.color = 'var(--clay)';
+      return;
+    }
+    if (newP !== conf) {
+      msg.textContent = 'New passwords do not match.';
+      msg.style.color = 'var(--clay)';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Updating...';
+    try {
+      const res = await apiFetch('/auth/change-password', {
+        method: 'PUT',
+        body: JSON.stringify({ currentPassword: curr, newPassword: newP })
+      });
+      if (res.token) localStorage.setItem('mavu_token', res.token);
+      msg.textContent = '✓ Password updated successfully!';
+      msg.style.color = 'var(--mill)';
+      document.getElementById('settingsChangePasswordForm').reset();
+      showToast('✓ Password updated successfully');
+      setTimeout(() => { msg.textContent = ''; }, 3000);
+    } catch (err) {
+      msg.textContent = err.message || 'Failed to update password.';
+      msg.style.color = 'var(--clay)';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Update password';
+    }
+  });
+
+  // Account tab actions
+  document.getElementById('btnSettingsExtendSession').addEventListener('click', extendSession);
+  document.getElementById('btnSettingsLogout').addEventListener('click', logout);
+}
+
+function updateThemeSelectorUI() {
+  const current = document.documentElement.getAttribute('data-theme') || getTheme();
+  const lightCard = document.getElementById('themeCardLight');
+  const darkCard = document.getElementById('themeCardDark');
+  const toggleBtn = document.getElementById('themeToggleTarget');
+
+  if (lightCard && darkCard) {
+    if (current === 'dark') {
+      lightCard.classList.remove('active');
+      darkCard.classList.add('active');
+    } else {
+      lightCard.classList.add('active');
+      darkCard.classList.remove('active');
+    }
+  }
+  if (toggleBtn) {
+    toggleBtn.textContent = current === 'dark' ? 'Light' : 'Dark';
+  }
+}
+
+function populateSettingsModal(user) {
+  if (!user) user = getCachedUser() || {};
+  const initial = (user.name || user.username || 'S').trim().charAt(0).toUpperCase();
+
+  const avatar = document.getElementById('settingsAvatar');
+  if (avatar) avatar.textContent = initial;
+
+  const nameEl = document.getElementById('settingsProfileName');
+  if (nameEl) nameEl.textContent = user.name || 'User';
+
+  const userEl = document.getElementById('settingsProfileUsername');
+  if (userEl) userEl.textContent = `@${user.username || 'user'}`;
+
+  const roleEl = document.getElementById('settingsProfileRole');
+  if (roleEl) {
+    roleEl.textContent = user.role === 'admin' ? 'Admin' : 'Staff';
+    roleEl.className = `role-pill role-${user.role || 'staff'}`;
+  }
+
+  const editInput = document.getElementById('editDisplayName');
+  if (editInput) editInput.value = user.name || '';
+
+  const roleDetail = document.getElementById('profileRoleDetail');
+  if (roleDetail) {
+    roleDetail.textContent = user.role === 'admin' ? 'Administrator (Full Access)' : 'Staff (Billing & Orders)';
+  }
+
+  const createdDetail = document.getElementById('profileCreatedDetail');
+  if (createdDetail) {
+    if (user.created_at) {
+      const d = new Date(user.created_at);
+      createdDetail.textContent = isNaN(d) ? 'Active' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    } else {
+      createdDetail.textContent = 'Mill Staff';
+    }
+  }
+
+  updateThemeSelectorUI();
+  updateSessionTimerInSettings();
+}
+
+function updateSessionTimerInSettings() {
+  const token = getToken();
+  const badge = document.getElementById('settingsSessionTimerBadge');
+  if (!badge) return;
+  if (!token) {
+    badge.textContent = 'None';
+    return;
+  }
+  const exp = getTokenExp(token);
+  if (!exp) {
+    badge.textContent = '12 hours';
+    return;
+  }
+  const remSec = Math.max(0, Math.floor((exp - Date.now()) / 1000));
+  const hrs = Math.floor(remSec / 3600);
+  const mins = Math.floor((remSec % 3600) / 60);
+  badge.textContent = hrs > 0 ? `${hrs}h ${mins}m remaining` : `${mins}m remaining`;
+}
+
+function openSettingsModal(initialTab = 'profile') {
+  ensureSettingsModal();
+  populateSettingsModal(getCachedUser());
+
+  // Activate requested tab
+  const modal = document.getElementById('settingsModal');
+  if (modal) {
+    modal.querySelectorAll('.settings-tab-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === initialTab);
+    });
+    modal.querySelectorAll('.settings-pane').forEach(p => {
+      p.classList.toggle('active', p.id === `pane-${initialTab}`);
+    });
+    modal.classList.add('open');
+  }
+}
+
+function closeSettingsModal() {
+  const modal = document.getElementById('settingsModal');
+  if (modal) modal.classList.remove('open');
+}
+
+// Alias for backwards compatibility
+function openChangePasswordModal() {
+  openSettingsModal('password');
 }
 
 // ── Session Watcher: Auto-Logout Warning & Refresh ──────────────
@@ -133,10 +619,11 @@ function ensureSessionWarningModal() {
 }
 
 async function extendSession() {
-  const btn = document.getElementById('btnExtendSession');
+  const btn = document.getElementById('btnExtendSession') || document.getElementById('btnSettingsExtendSession');
+  const origText = btn ? btn.textContent : '';
   if (btn) {
     btn.disabled = true;
-    btn.textContent = 'Extending session...';
+    btn.textContent = 'Extending...';
   }
   try {
     const isRemembered = localStorage.getItem('mavu_remember') === '1';
@@ -146,6 +633,7 @@ async function extendSession() {
     });
     setAuth(res.token, res.user);
     hideSessionWarning();
+    updateSessionTimerInSettings();
     showToast('✓ Session extended successfully for ' + (isRemembered ? '30 days' : '12 hours'));
   } catch (err) {
     console.error('Session extend error:', err);
@@ -153,7 +641,7 @@ async function extendSession() {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = 'Stay signed in / அமர்வை நீட்டிக்கவும்';
+      btn.textContent = origText || 'Stay signed in';
     }
   }
 }
@@ -201,7 +689,7 @@ function initSessionWatcher() {
   if (!token) return;
 
   ensureSessionWarningModal();
-  ensureChangePasswordModal();
+  ensureSettingsModal();
 
   if (sessionCheckInterval) clearInterval(sessionCheckInterval);
 
@@ -228,161 +716,37 @@ function initSessionWatcher() {
   sessionCheckInterval = setInterval(checkSession, 15000); // Check every 15s
 }
 
-// ── Change Password Modal ───────────────────────────────────────
-function ensureChangePasswordModal() {
-  if (document.getElementById('changePasswordModal')) return;
-  const overlay = document.createElement('div');
-  overlay.id = 'changePasswordModal';
-  overlay.className = 'modal-overlay';
-  overlay.setAttribute('role', 'dialog');
-  overlay.setAttribute('aria-modal', 'true');
-  overlay.setAttribute('aria-labelledby', 'changePasswordTitle');
-
-  overlay.innerHTML = `
-    <div class="modal" style="max-width: 440px;">
-      <div class="modal-header">
-        <div>
-          <h2 id="changePasswordTitle">Change password</h2>
-          <p class="header-sub" id="changePasswordSub">கடவுச்சொல்லை மாற்றவும்</p>
-        </div>
-        <button type="button" class="modal-close" id="changePasswordClose" aria-label="Close">&#10005;</button>
-      </div>
-
-      <form id="changePasswordForm" novalidate>
-        <div class="field-group">
-          <label for="currentPassword">Current password / தற்போதைய கடவுச்சொல்</label>
-          <input id="currentPassword" type="password" placeholder="Enter current password" autocomplete="current-password" required>
-        </div>
-
-        <div class="field-group">
-          <label for="newPassword">New password / புதிய கடவுச்சொல்</label>
-          <input id="newPassword" type="password" placeholder="Minimum 6 characters" autocomplete="new-password" minlength="6" required>
-        </div>
-
-        <div class="field-group">
-          <label for="confirmNewPassword">Confirm new password / உறுதிப்படுத்தவும்</label>
-          <input id="confirmNewPassword" type="password" placeholder="Re-type new password" autocomplete="new-password" minlength="6" required>
-        </div>
-
-        <p class="form-message" id="changePasswordMsg" aria-live="polite" style="margin-top:0.4rem;"></p>
-
-        <div style="display:flex; justify-content:flex-end; gap:0.6rem; margin-top:1.2rem;">
-          <button type="button" class="filter-btn" id="changePasswordCancel">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="changePasswordSubmitBtn">Update password</button>
-        </div>
-      </form>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-
-  const closeBtn = document.getElementById('changePasswordClose');
-  const cancelBtn = document.getElementById('changePasswordCancel');
-  const form = document.getElementById('changePasswordForm');
-
-  function closeModal() {
-    overlay.classList.remove('open');
-    form.reset();
-    const msg = document.getElementById('changePasswordMsg');
-    if (msg) msg.textContent = '';
-  }
-
-  if (closeBtn) closeBtn.addEventListener('click', closeModal);
-  if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) closeModal();
-  });
-
-  form.addEventListener('submit', async function (e) {
-    e.preventDefault();
-    const currentPassword = document.getElementById('currentPassword').value;
-    const newPassword = document.getElementById('newPassword').value;
-    const confirmNewPassword = document.getElementById('confirmNewPassword').value;
-    const msg = document.getElementById('changePasswordMsg');
-    const submitBtn = document.getElementById('changePasswordSubmitBtn');
-
-    msg.textContent = '';
-    msg.style.color = '';
-
-    if (!currentPassword) {
-      msg.textContent = 'Please enter your current password.';
-      msg.style.color = 'var(--clay)';
-      return;
-    }
-    if (!newPassword || newPassword.length < 6) {
-      msg.textContent = 'New password must be at least 6 characters long.';
-      msg.style.color = 'var(--clay)';
-      return;
-    }
-    if (newPassword !== confirmNewPassword) {
-      msg.textContent = 'New passwords do not match.';
-      msg.style.color = 'var(--clay)';
-      return;
-    }
-
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Updating...';
-    }
-
-    try {
-      const res = await apiFetch('/auth/change-password', {
-        method: 'PUT',
-        body: JSON.stringify({ currentPassword, newPassword })
-      });
-
-      if (res.token) {
-        localStorage.setItem('mavu_token', res.token);
-      }
-
-      msg.textContent = '✓ Password changed successfully! / கடவுச்சொல் மாற்றப்பட்டது.';
-      msg.style.color = 'var(--mill)';
-      showToast('✓ Password updated successfully');
-
-      setTimeout(() => {
-        closeModal();
-      }, 1200);
-    } catch (err) {
-      msg.textContent = err.message || 'Failed to change password.';
-      msg.style.color = 'var(--clay)';
-    } finally {
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Update password';
-      }
-    }
-  });
-}
-
-function openChangePasswordModal() {
-  ensureChangePasswordModal();
-  const user = getCachedUser();
-  const sub = document.getElementById('changePasswordSub');
-  if (sub && user) {
-    sub.textContent = `Logged in as ${user.name} (@${user.username})`;
-  }
-  const modal = document.getElementById('changePasswordModal');
-  if (modal) modal.classList.add('open');
-  const currInput = document.getElementById('currentPassword');
-  if (currInput) currInput.focus();
-}
-
 // ── Header user-chip + role-based nav/section visibility ───────────
 function renderUserChip(user) {
   const chip = document.getElementById('userChip');
   if (chip) {
     const roleLabel = user.role === 'admin' ? 'Admin' : 'Staff';
+    const isDark = (document.documentElement.getAttribute('data-theme') || getTheme()) === 'dark';
+
     chip.innerHTML = `
+      <button type="button" class="chip-theme-btn" id="chipThemeBtn" title="${isDark ? 'Switch to Light theme' : 'Switch to Dark theme'}" aria-label="Toggle theme">
+        <span class="theme-icon">${isDark ? '☀️' : '🌙'}</span>
+      </button>
+      <button type="button" class="chip-action" id="chipSettingsBtn" title="Open Settings &amp; Profile">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:4px;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings
+      </button>
       <span class="role-pill role-${user.role}">${roleLabel}</span>
-      <span class="chip-name" title="${user.name} (@${user.username})">${user.name}</span>
-      <button type="button" class="chip-action" id="chipChangePasswordBtn" title="Change your password">Password</button>
+      <span class="chip-name" title="${user.name} (@${user.username})" style="cursor:pointer;" id="chipUserNameLink">${user.name}</span>
       <button type="button" class="chip-logout" id="chipLogoutBtn">Logout</button>
     `;
-    const logoutBtn = document.getElementById('chipLogoutBtn');
-    if (logoutBtn) logoutBtn.addEventListener('click', logout);
 
-    const changePwdBtn = document.getElementById('chipChangePasswordBtn');
-    if (changePwdBtn) changePwdBtn.addEventListener('click', openChangePasswordModal);
+    document.getElementById('chipThemeBtn')?.addEventListener('click', toggleTheme);
+    document.getElementById('chipSettingsBtn')?.addEventListener('click', () => openSettingsModal('profile'));
+    document.getElementById('chipUserNameLink')?.addEventListener('click', () => openSettingsModal('profile'));
+    document.getElementById('chipLogoutBtn')?.addEventListener('click', logout);
   }
+
+  // Sidebar Settings button if present on page
+  const sidebarBtn = document.getElementById('sidebarSettingsBtn');
+  if (sidebarBtn) {
+    sidebarBtn.addEventListener('click', () => openSettingsModal('profile'));
+  }
+
   document.querySelectorAll('[data-role-only="admin"]').forEach(el => {
     el.style.display = user.role === 'admin' ? '' : 'none';
   });

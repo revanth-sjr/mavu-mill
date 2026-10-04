@@ -27,6 +27,19 @@ async function me(req, res) {
   res.json({ user: req.user });
 }
 
+async function updateProfile(req, res) {
+  const { name } = req.body || {};
+  if (!name || !name.trim()) {
+    return res.status(400).json({ message: 'Display name cannot be empty.' });
+  }
+  await pool.query('UPDATE users SET name = ? WHERE id = ?', [name.trim(), req.user.id]);
+  const [rows] = await pool.query(
+    'SELECT id, username, name, role, created_at FROM users WHERE id = ?',
+    [req.user.id]
+  );
+  res.json({ ok: true, user: rows[0], message: 'Profile updated successfully.' });
+}
+
 async function changePassword(req, res) {
   const { currentPassword, newPassword } = req.body || {};
   if (!currentPassword || !newPassword) {
@@ -128,6 +141,7 @@ async function deleteUser(req, res) {
 module.exports = {
   login,
   me,
+  updateProfile,
   changePassword,
   resetUserPassword,
   refreshToken,
