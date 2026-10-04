@@ -643,6 +643,33 @@ select {
   background: linear-gradient(var(--paper), #FBFDFC);
 }
 .section-head-left h2 { font-size: 1rem; color: var(--ink); }
+.section-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+.btn-text-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 32px;
+  padding: 0 0.75rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  font-family: var(--ui-face);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-text-sm:hover {
+  border-color: var(--mill);
+  color: var(--mill);
+  background: var(--wash);
+}
 .section-body { padding: 1.05rem 1.15rem 1.2rem; flex: 1; }
 
 /* List rows */

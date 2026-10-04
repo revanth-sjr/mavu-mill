@@ -70,6 +70,10 @@
             </select>
           </div>
           <div style="flex:1"></div>
+          <button class="filter-btn" id="downloadRecordsBtn" title="Download sales records as Excel / CSV">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Download records</span>
+          </button>
           <button class="filter-btn" id="refreshDashboardBtn">&#8635; Refresh</button>
           <a class="quick-new-btn" href="index.html">+ New bill</a>
         </div>
@@ -126,6 +130,16 @@
                 <p class="card-title">Orders</p>
                 <h2>Recent orders</h2>
               </div>
+              <div class="section-head-actions">
+                <button class="btn-text-sm" id="exportOrdersCsvBtn" title="Export orders to Excel / CSV">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Export CSV
+                </button>
+                <button class="btn-text-sm" id="printReportBtn" title="Print sales summary report">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                  Print report
+                </button>
+              </div>
             </div>
             <div class="section-body">
               <div id="recentOrders" class="list-stack"></div>
@@ -178,6 +192,12 @@
                 <p class="card-title">Customer management</p>
                 <h2>Customer list</h2>
               </div>
+              <div class="section-head-actions">
+                <button class="btn-text-sm" id="exportCustomersCsvBtn" title="Export customer directory to CSV">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Export customers
+                </button>
+              </div>
             </div>
             <div class="section-body">
               <div class="customer-search-row">
@@ -211,7 +231,10 @@
           <p class="card-title">Customer profile</p>
           <h2 id="modalCustomerName">&#8212;</h2>
         </div>
-        <button class="modal-close" id="modalClose" aria-label="Close">&#x2715;</button>
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          <button class="btn-text-sm" id="modalExportCustomerOrdersBtn" title="Export this customer's order history">Export CSV</button>
+          <button class="modal-close" id="modalClose" aria-label="Close">&#x2715;</button>
+        </div>
       </div>
       <div class="modal-stats-grid">
         <div class="modal-stat">

@@ -457,6 +457,254 @@ async function clearAllData() {
   }
 }
 
+// ── Export / Download Records (Excel / CSV) ────────────────────
+function escapeCsv(val) {
+  if (val === null || val === undefined) return '""';
+  const str = String(val).replace(/"/g, '""');
+  return `"${str}"`;
+}
+
+function triggerDownload(content, filename, mimeType = 'text/csv;charset=utf-8;') {
+  // \uFEFF is UTF-8 Byte Order Mark (BOM) so Excel opens UTF-8 text properly (Tamil characters, etc.)
+  const blob = new Blob(['\uFEFF' + content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.setAttribute('download', filename);
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+function downloadOrdersCsv(ordersToExport, filenamePrefix = 'sakthi_mill_records') {
+  const list = ordersToExport || filterByPeriod(allOrders, activePeriod);
+  if (!list || !list.length) {
+    alert('No records available to download for this period.');
+    return;
+  }
+
+  const sorted = sortOrders(list, activeSort);
+  const headers = [
+    'Order ID',
+    'Date & Time',
+    'Date',
+    'Time',
+    'Customer Name',
+    'Phone',
+    'Product',
+    'Quantity',
+    'Unit',
+    'Rate (INR)',
+    'Total (INR)',
+    'Custom Rate',
+    'Tracked'
+  ];
+
+  let totalQty = 0;
+  let totalAmount = 0;
+
+  const rows = sorted.map(o => {
+    const d = new Date(o.date);
+    const dateStr = d.toLocaleDateString('en-IN');
+    const timeStr = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    totalQty += Number(o.quantity) || 0;
+    totalAmount += Number(o.total) || 0;
+
+    return [
+      escapeCsv(o.id || ''),
+      escapeCsv(fmtDate(o.date)),
+      escapeCsv(dateStr),
+      escapeCsv(timeStr),
+      escapeCsv(o.name || ''),
+      escapeCsv(o.phone || '—'),
+      escapeCsv(o.product || ''),
+      escapeCsv(Number(o.quantity).toFixed(2)),
+      escapeCsv(o.unit || ''),
+      escapeCsv(Number(o.rate).toFixed(2)),
+      escapeCsv(Number(o.total).toFixed(2)),
+      escapeCsv(o.customRate ? 'Yes' : 'No'),
+      escapeCsv(o.tracked !== false ? 'Yes' : 'No')
+    ].join(',');
+  });
+
+  const summaryRow = [
+    escapeCsv('TOTAL'),
+    escapeCsv(`${sorted.length} orders`),
+    '""',
+    '""',
+    '""',
+    '""',
+    '""',
+    escapeCsv(totalQty.toFixed(2)),
+    '""',
+    '""',
+    escapeCsv(totalAmount.toFixed(2)),
+    '""',
+    '""'
+  ].join(',');
+
+  const csvContent = [headers.join(','), ...rows, '', summaryRow].join('\r\n');
+  const dateTag = new Date().toISOString().slice(0, 10);
+  const filename = `${filenamePrefix}_${activePeriod}_${dateTag}.csv`;
+  triggerDownload(csvContent, filename);
+}
+
+function downloadCustomersCsv() {
+  const customers = buildCustomerMap(allOrders);
+  if (!customers.length) {
+    alert('No customer records available to download.');
+    return;
+  }
+
+  const headers = [
+    'Customer Name',
+    'Phone Number',
+    'Total Orders',
+    'Total Spent (INR)',
+    'Favourite Product',
+    'Last Order Date'
+  ];
+
+  let grandSpent = 0;
+  let grandOrders = 0;
+
+  const rows = customers.map(c => {
+    grandSpent += c.spent;
+    grandOrders += c.visits;
+    return [
+      escapeCsv(c.name),
+      escapeCsv(c.phone || '—'),
+      escapeCsv(c.visits),
+      escapeCsv(c.spent.toFixed(2)),
+      escapeCsv(c.favProduct || '—'),
+      escapeCsv(fmtDate(c.lastVisit))
+    ].join(',');
+  });
+
+  const summaryRow = [
+    escapeCsv('TOTAL CUSTOMERS: ' + customers.length),
+    '""',
+    escapeCsv(grandOrders),
+    escapeCsv(grandSpent.toFixed(2)),
+    '""',
+    '""'
+  ].join(',');
+
+  const csvContent = [headers.join(','), ...rows, '', summaryRow].join('\r\n');
+  const dateTag = new Date().toISOString().slice(0, 10);
+  triggerDownload(csvContent, `sakthi_mill_customers_${dateTag}.csv`);
+}
+
+function printPeriodReport() {
+  const filtered = filterByPeriod(allOrders, activePeriod);
+  if (!filtered.length) {
+    alert('No records available for the selected period.');
+    return;
+  }
+  const periodTitles = { today: 'Today', month: 'This Month', year: 'This Year', all: 'All Time' };
+  const periodLabel = periodTitles[activePeriod] || activePeriod;
+  const earnings = filtered.reduce((s,o) => s + o.total, 0);
+  const qty = filtered.reduce((s,o) => s + o.quantity, 0);
+
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    window.print();
+    return;
+  }
+
+  const rowsHtml = sortOrders(filtered, 'recent').map((o, idx) => `
+    <tr>
+      <td style="color:#666">${idx + 1}</td>
+      <td>${fmtDate(o.date)}</td>
+      <td><strong>${o.name}</strong>${o.phone ? '<br><small style="color:#666">' + o.phone + '</small>' : ''}</td>
+      <td>${o.product}</td>
+      <td style="text-align:right">${Number(o.quantity).toFixed(2)} ${o.unit}</td>
+      <td style="text-align:right">₹${Number(o.rate).toFixed(2)}</td>
+      <td style="text-align:right"><strong>₹${Number(o.total).toFixed(2)}</strong></td>
+    </tr>
+  `).join('');
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html lang="ta">
+    <head>
+      <meta charset="UTF-8">
+      <title>Sales Statement - ${periodLabel}</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; padding: 24px; color: #12201A; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #16704A; padding-bottom: 12px; margin-bottom: 20px; }
+        .brand { font-size: 20px; font-weight: 800; color: #16704A; }
+        .meta { text-align: right; font-size: 13px; color: #555; }
+        .stats { display: flex; gap: 20px; margin-bottom: 20px; background: #F4F8F6; padding: 12px 16px; border-radius: 6px; }
+        .stat-item { flex: 1; }
+        .stat-lbl { font-size: 11px; text-transform: uppercase; color: #666; font-weight: 600; }
+        .stat-val { font-size: 18px; font-weight: 700; color: #16704A; margin-top: 4px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { text-align: left; padding: 8px; border-bottom: 2px solid #ddd; background: #fafafa; font-size: 12px; font-weight: 600; }
+        td { padding: 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+        .total-row td { font-size: 14px; font-weight: bold; border-top: 2px solid #16704A; background: #F4F8F6; }
+        @media print {
+          @page { margin: 12mm; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div>
+          <div class="brand">சக்தி எண்ணெய் மற்றும் மாவு ஆலை</div>
+          <div style="font-size:13px;color:#666">Sakthi Oil &amp; Flour Mill &middot; Sales Statement</div>
+        </div>
+        <div class="meta">
+          <div><strong>Period:</strong> ${periodLabel}</div>
+          <div><strong>Printed:</strong> ${new Date().toLocaleString('en-IN')}</div>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-lbl">Total Earnings</div>
+          <div class="stat-val">₹${earnings.toFixed(2)}</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-lbl">Total Orders</div>
+          <div class="stat-val">${filtered.length}</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-lbl">Total Quantity</div>
+          <div class="stat-val">${qty.toFixed(2)} units</div>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Date &amp; Time</th>
+            <th>Customer</th>
+            <th>Product</th>
+            <th style="text-align:right">Qty</th>
+            <th style="text-align:right">Rate</th>
+            <th style="text-align:right">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+          <tr class="total-row">
+            <td colspan="4">TOTAL (${filtered.length} orders)</td>
+            <td style="text-align:right">${qty.toFixed(2)}</td>
+            <td></td>
+            <td style="text-align:right">₹${earnings.toFixed(2)}</td>
+          </tr>
+        </tbody>
+      </table>
+      <script>
+        window.onload = function() { window.print(); }
+      </script>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+}
+
 // ── Wire up controls ──────────────────────────────────────────
 document.querySelectorAll('.filter-btn[data-period]').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -485,6 +733,41 @@ if (clearBtn) clearBtn.addEventListener('click', clearAllData);
 
 const refreshBtn = document.getElementById('refreshDashboardBtn');
 if (refreshBtn) refreshBtn.addEventListener('click', renderDashboard);
+
+const downloadRecordsBtn = document.getElementById('downloadRecordsBtn');
+if (downloadRecordsBtn) {
+  downloadRecordsBtn.addEventListener('click', () => downloadOrdersCsv());
+}
+
+const exportOrdersCsvBtn = document.getElementById('exportOrdersCsvBtn');
+if (exportOrdersCsvBtn) {
+  exportOrdersCsvBtn.addEventListener('click', () => downloadOrdersCsv());
+}
+
+const printReportBtn = document.getElementById('printReportBtn');
+if (printReportBtn) {
+  printReportBtn.addEventListener('click', printPeriodReport);
+}
+
+const exportCustomersCsvBtn = document.getElementById('exportCustomersCsvBtn');
+if (exportCustomersCsvBtn) {
+  exportCustomersCsvBtn.addEventListener('click', downloadCustomersCsv);
+}
+
+const modalExportBtn = document.getElementById('modalExportCustomerOrdersBtn');
+if (modalExportBtn) {
+  modalExportBtn.addEventListener('click', () => {
+    if (!openCustomer) return;
+    const cmap = buildCustomerMap(allOrders);
+    const c = cmap.find(x => x.name.toLowerCase() === openCustomer.toLowerCase());
+    if (c && c.orders && c.orders.length) {
+      const cleanName = c.name.replace(/[^a-zA-Z0-9\u0B80-\u0BFF]/g, '_');
+      downloadOrdersCsv(c.orders, `sakthi_mill_customer_${cleanName}`);
+    } else {
+      alert('No orders found for this customer.');
+    }
+  });
+}
 
 const customerSearchInput = document.getElementById('customerSearchInput');
 if (customerSearchInput) {
