@@ -544,7 +544,13 @@ function populateSettingsModal(user) {
   const initial = (user.name || user.username || 'S').trim().charAt(0).toUpperCase();
 
   const avatar = document.getElementById('settingsAvatar');
-  if (avatar) avatar.textContent = initial;
+  if (avatar) {
+    if (user.avatar_url) {
+      avatar.innerHTML = `<img src="${user.avatar_url}" alt="${user.name || 'User'}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+    } else {
+      avatar.textContent = initial;
+    }
+  }
 
   const nameEl = document.getElementById('settingsProfileName');
   if (nameEl) nameEl.textContent = user.name || 'User';
@@ -782,6 +788,10 @@ function renderUserChip(user) {
     const roleLabel = user.role === 'admin' ? 'Admin' : 'Staff';
     const isDark = (document.documentElement.getAttribute('data-theme') || getTheme()) === 'dark';
 
+    const avatarImg = user.avatar_url
+      ? `<img src="${user.avatar_url}" alt="${user.name}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;vertical-align:-4px;margin-right:5px;border:1px solid var(--wash-deep);">`
+      : '';
+
     chip.innerHTML = `
       <button type="button" class="chip-theme-btn" id="chipThemeBtn" title="${isDark ? 'Switch to Light theme' : 'Switch to Dark theme'}" aria-label="Toggle theme">
         <span class="theme-icon">${isDark ? ICONS.sun : ICONS.moon}</span>
@@ -790,7 +800,7 @@ function renderUserChip(user) {
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:4px;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings
       </button>
       <span class="role-pill role-${user.role}">${roleLabel}</span>
-      <span class="chip-name" title="${user.name} (@${user.username})" style="cursor:pointer;" id="chipUserNameLink">${user.name}</span>
+      <span class="chip-name" title="${user.name} (@${user.username})" style="cursor:pointer;" id="chipUserNameLink">${avatarImg}${user.name}</span>
       <button type="button" class="chip-logout" id="chipLogoutBtn">Logout</button>
     `;
 
@@ -1026,3 +1036,140 @@ if (signupForm) {
     }
   });
 }
+
+// ── Google Authentication Integration ──────────────────────────────
+let activeGoogleClientId = '';
+
+// Fetch configured client ID from server
+(async function loadGoogleConfig() {
+  try {
+    const res = await fetch(API_BASE + '/auth/google/config');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.clientId) activeGoogleClientId = data.clientId;
+    }
+  } catch (e) {
+    console.warn('Could not fetch Google auth config:', e);
+  }
+  if (document.getElementById('googleBtnContainer')) {
+    initGoogleAuth();
+  }
+})();
+
+async function handleGoogleCredential(response) {
+  try {
+    showToast('Signing in with Google / கூகிள் மூலம் உள்நுழைகிறது...');
+    const activeRole = document.getElementById('signupRole')?.value || 'admin';
+    const ownerCode = document.getElementById('signupOwnerCode')?.value?.trim();
+
+    const res = await fetch(API_BASE + '/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        credential: response.credential,
+        role: activeRole,
+        ownerCode: activeRole === 'staff' ? ownerCode : undefined
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error((data && (data.error || data.message)) || 'Google sign-in failed.');
+    }
+    setAuth(data.token, data.user, true);
+    showToast(`✓ Welcome, ${data.user.name || 'User'}!`);
+    setTimeout(() => { window.location.href = 'index.html'; }, 300);
+  } catch (err) {
+    console.error('Google auth error:', err);
+    showToast(err.message || 'Google authentication error', true);
+    const errBox = document.getElementById('loginError') || document.getElementById('signupError');
+    if (errBox) errBox.textContent = err.message || 'Google sign in failed.';
+  }
+}
+
+function initGoogleAuth() {
+  if (!activeGoogleClientId) {
+    setTimeout(initGoogleAuth, 200);
+    return;
+  }
+  if (typeof google === 'undefined' || !google.accounts || !google.accounts.id) {
+    setTimeout(initGoogleAuth, 300);
+    return;
+  }
+
+  try {
+    google.accounts.id.initialize({
+      client_id: activeGoogleClientId,
+      callback: handleGoogleCredential,
+      auto_select: false,
+      cancel_on_tap_outside: true
+    });
+
+    const container = document.getElementById('googleBtnContainer');
+    if (container) {
+      const isDark = (document.documentElement.getAttribute('data-theme') || getTheme()) === 'dark';
+      google.accounts.id.renderButton(container, {
+        theme: isDark ? 'filled_black' : 'outline',
+        size: 'large',
+        text: 'continue_with',
+        shape: 'rectangular',
+        width: 320,
+        logo_alignment: 'left'
+      });
+    }
+  } catch (e) {
+    console.warn('Google Identity button render warning:', e);
+  }
+}
+
+// Custom fallback button click
+const btnCustomGoogle = document.getElementById('btnCustomGoogle');
+if (btnCustomGoogle) {
+  btnCustomGoogle.addEventListener('click', () => {
+    if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+      google.accounts.id.prompt();
+    } else {
+      // Direct OAuth 2.0 authorization code redirect flow
+      const redirectUri = window.location.origin.includes('localhost')
+        ? window.location.origin + '/index.html'
+        : 'https://mavu-mill-qladoau67-revanthsjr-7530.vercel.app/index.html';
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(activeGoogleClientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile&access_type=online&prompt=select_account`;
+      window.location.href = authUrl;
+    }
+  });
+}
+
+// Check for Google OAuth2 code in URL query string (when redirected from Google)
+(async function checkGoogleRedirectCode() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
+  if (!code) return;
+
+  try {
+    // Clean code parameter from address bar
+    const cleanPath = window.location.pathname;
+    window.history.replaceState({}, document.title, cleanPath);
+
+    showToast('Verifying Google authorization...');
+    const redirectUri = window.location.origin.includes('localhost')
+      ? window.location.origin + '/index.html'
+      : 'https://mavu-mill-qladoau67-revanthsjr-7530.vercel.app/index.html';
+
+    const res = await fetch(API_BASE + '/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, redirectUri })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error((data && (data.error || data.message)) || 'Google authentication failed.');
+    }
+
+    setAuth(data.token, data.user, true);
+    showToast(`✓ Welcome, ${data.user.name || 'User'}!`);
+    setTimeout(() => { window.location.href = 'index.html'; }, 300);
+  } catch (err) {
+    console.error('Google OAuth code verification error:', err);
+    showToast('Google sign in error: ' + err.message, true);
+  }
+})();
+

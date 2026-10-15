@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
 const { signToken } = require('../utils/jwt');
@@ -220,6 +221,145 @@ async function signup(req, res) {
   });
 }
 
+// Helper to retrieve Google credentials from environment or local secret file (no hardcoded secrets)
+function getGoogleCredentials() {
+  let clientId = process.env.GOOGLE_CLIENT_ID || '';
+  let clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
+
+  if (!clientId || !clientSecret) {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const rootDir = path.resolve(__dirname, '..');
+      const files = fs.readdirSync(rootDir);
+      const secretFile = files.find(f => f.startsWith('client_secret') && f.endsWith('.json'));
+      if (secretFile) {
+        const secretJson = JSON.parse(fs.readFileSync(path.join(rootDir, secretFile), 'utf8'));
+        const webConfig = secretJson.web || secretJson.installed;
+        if (webConfig) {
+          if (!clientId && webConfig.client_id) clientId = webConfig.client_id;
+          if (!clientSecret && webConfig.client_secret) clientSecret = webConfig.client_secret;
+        }
+      }
+    } catch (e) {
+      // ignore dynamic file reading errors
+    }
+  }
+  return { clientId, clientSecret };
+}
+
+async function getGoogleConfig(req, res) {
+  const { clientId } = getGoogleCredentials();
+  res.json({ clientId });
+}
+
+async function googleAuth(req, res) {
+  const { credential, code, redirectUri, role, ownerCode } = req.body || {};
+  const { clientId, clientSecret } = getGoogleCredentials();
+
+  try {
+    let payload = null;
+
+    if (credential) {
+      // 1. Verify Google ID token (from Google Identity Services GSI button / popup)
+      const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
+      if (!verifyRes.ok) {
+        return res.status(401).json({ message: 'Google token verification failed. Please try again.' });
+      }
+      payload = await verifyRes.json();
+    } else if (code) {
+      // 2. Exchange authorization code for tokens (OAuth 2.0 redirect flow)
+      const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          code,
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: redirectUri || 'https://mavu-mill-qladoau67-revanthsjr-7530.vercel.app/index.html',
+          grant_type: 'authorization_code'
+        })
+      });
+      const tokenData = await tokenRes.json();
+      if (!tokenRes.ok || !tokenData.id_token) {
+        return res.status(401).json({ message: 'Failed to exchange Google code: ' + (tokenData.error_description || tokenData.error || 'Invalid code') });
+      }
+      const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(tokenData.id_token)}`);
+      payload = await verifyRes.json();
+    } else {
+      return res.status(400).json({ message: 'Google credential or authorization code is required.' });
+    }
+
+    if (!payload || !payload.email) {
+      return res.status(401).json({ message: 'Google did not provide an email address.' });
+    }
+
+    const email = payload.email.trim();
+    const name = payload.name ? payload.name.trim() : email.split('@')[0];
+    const googleId = payload.sub;
+    const picture = payload.picture || null;
+
+    // A. Check if user exists by google_id
+    let user = null;
+    if (googleId) {
+      const [byGid] = await pool.query('SELECT * FROM users WHERE google_id = ?', [googleId]);
+      if (byGid.length) user = byGid[0];
+    }
+
+    // B. Check by email or username
+    if (!user) {
+      const [byEmail] = await pool.query('SELECT * FROM users WHERE username = ? OR username = ?', [email, email.split('@')[0]]);
+      if (byEmail.length) {
+        user = byEmail[0];
+        // Link google_id and avatar
+        try {
+          await pool.query('UPDATE users SET google_id = ?, avatar_url = COALESCE(avatar_url, ?) WHERE id = ?', [googleId, picture, user.id]);
+        } catch (e) {
+          // ignore column warning if column was not ready
+        }
+      }
+    }
+
+    // C. User does not exist, auto-provision
+    if (!user) {
+      const isMillOwner = email.toLowerCase() === 'revanthsjr@gmail.com' || email.toLowerCase() === 'revanthsjr@gmailcom';
+      const assignedRole = isMillOwner ? 'admin' : (role === 'staff' ? 'staff' : 'admin');
+      const uniqueCode = await generateUniqueCode(assignedRole === 'admin' ? 'OWN' : 'STF');
+
+      let ownerId = null;
+      if (assignedRole === 'staff' && ownerCode) {
+        const [owners] = await pool.query("SELECT id FROM users WHERE role = 'admin' AND UPPER(TRIM(unique_code)) = ?", [ownerCode.trim().toUpperCase()]);
+        if (owners.length) ownerId = owners[0].id;
+      }
+
+      const randomPassword = crypto.randomBytes(32).toString('hex');
+      const hash = await bcrypt.hash(randomPassword, 10);
+
+      const [resInsert] = await pool.query(
+        'INSERT INTO users (username, password_hash, name, role, unique_code, owner_id, google_id, avatar_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [email, hash, name, assignedRole, uniqueCode, ownerId, googleId, picture]
+      );
+      const [createdRows] = await pool.query('SELECT * FROM users WHERE id = ?', [resInsert.insertId]);
+      user = createdRows[0];
+    }
+
+    const token = signToken({ id: user.id }, true);
+    const sanitizedUser = Object.assign({}, user);
+    delete sanitizedUser.password_hash;
+    sanitizedUser.uniqueCode = user.unique_code;
+
+    return res.json({
+      ok: true,
+      token,
+      user: sanitizedUser,
+      message: `Welcome, ${sanitizedUser.name}! Signed in with Google successfully.`
+    });
+  } catch (err) {
+    console.error('Google authentication error:', err);
+    return res.status(500).json({ message: 'Google authentication error: ' + err.message });
+  }
+}
+
 module.exports = {
   login,
   signup,
@@ -230,5 +370,7 @@ module.exports = {
   refreshToken,
   listUsers,
   register,
-  deleteUser
+  deleteUser,
+  getGoogleConfig,
+  googleAuth
 };

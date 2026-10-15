@@ -92,6 +92,8 @@ async function ensureSchema() {
       role          ENUM('admin', 'staff') NOT NULL DEFAULT 'staff',
       unique_code   VARCHAR(30) NULL UNIQUE,
       owner_id      INT NULL,
+      google_id     VARCHAR(100) NULL UNIQUE,
+      avatar_url    VARCHAR(255) NULL,
       created_at    DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
@@ -211,6 +213,28 @@ async function ensureMigrations() {
     }
   } catch (err) {
     console.warn('Migration warning (unique_code index):', err.message);
+  }
+
+  // 5. Ensure google_id exists in users table
+  try {
+    const [gidCols] = await pool.query(`SHOW COLUMNS FROM users LIKE 'google_id'`);
+    if (gidCols.length === 0) {
+      console.log('Migrating: adding users.google_id ...');
+      await pool.query('ALTER TABLE users ADD COLUMN google_id VARCHAR(100) NULL UNIQUE');
+    }
+  } catch (err) {
+    console.warn('Migration warning (users.google_id):', err.message);
+  }
+
+  // 6. Ensure avatar_url exists in users table
+  try {
+    const [avCols] = await pool.query(`SHOW COLUMNS FROM users LIKE 'avatar_url'`);
+    if (avCols.length === 0) {
+      console.log('Migrating: adding users.avatar_url ...');
+      await pool.query('ALTER TABLE users ADD COLUMN avatar_url VARCHAR(255) NULL');
+    }
+  } catch (err) {
+    console.warn('Migration warning (users.avatar_url):', err.message);
   }
 }
 
