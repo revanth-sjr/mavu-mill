@@ -127,36 +127,39 @@
 
         <div class="billing-layout" style="margin-top:1.1rem">
 
-          <!-- ADD ACCOUNT -->
-          <section class="card form-card" aria-labelledby="add-account-title">
-            <p class="card-title">New account</p>
-            <h2 id="add-account-title" style="margin-bottom:1.1rem">Add a team account</h2>
+          <!-- STAFF INVITATION / JOIN INFO -->
+          <section class="card form-card" aria-labelledby="staff-invite-title">
+            <p class="card-title">Staff Access &middot; பணியாளர் இணைப்பு</p>
+            <h2 id="staff-invite-title" style="margin-bottom:0.75rem">Unique Mill Code</h2>
+            
+            <p style="color:var(--muted);font-size:0.86rem;line-height:1.5;margin-bottom:1.1rem">
+              Staff create their own accounts during sign up. Share your unique code with staff members so they can join your mill.
+            </p>
 
-            <form id="newUserForm" novalidate>
-              <div class="field-group">
-                <label for="newUserName">Full name</label>
-                <input id="newUserName" type="text" placeholder="e.g. Selvi" autocomplete="off">
+            <div class="mill-code-card">
+              <span class="mill-code-label">YOUR MILL CODE / ஆலை குறியீடு</span>
+              <div class="mill-code-row">
+                <code class="mill-code-value" id="ownerMillCodeDisplay">OWN-......</code>
+                <button type="button" class="btn btn-secondary btn-sm" id="btnCopyMillCode" title="Copy code">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  <span id="copyMillCodeText">Copy / நகலெடு</span>
+                </button>
               </div>
-              <div class="field-grid">
-                <div class="field-group">
-                  <label for="newUsername">Username</label>
-                  <input id="newUsername" type="text" placeholder="e.g. selvi" autocomplete="off">
-                </div>
-                <div class="field-group">
-                  <label for="newUserRole">Role</label>
-                  <select id="newUserRole">
-                    <option value="staff">Staff</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-              </div>
-              <div class="field-group">
-                <label for="newUserPassword">Password <span style="color:var(--faint);font-weight:500">— at least 6 characters</span></label>
-                <input id="newUserPassword" type="text" placeholder="Set a password" autocomplete="off">
-              </div>
-              <button type="button" class="btn btn-primary" id="addUserBtn" style="width:100%;margin-top:0.4rem">Add account</button>
-              <p class="form-message" id="userFormMessage" aria-live="polite"></p>
-            </form>
+            </div>
+
+            <div class="staff-join-steps">
+              <h4 style="font-size:0.82rem;font-weight:700;letter-spacing:0.02em;margin-bottom:0.45rem;color:var(--ink)">
+                How staff join your mill / பணியாளர்கள் இணையும் முறை:
+              </h4>
+              <ol style="margin:0;padding-left:1.2rem;color:var(--muted);font-size:0.83rem;line-height:1.65">
+                <li>Staff go to the <strong>Sign Up / பதிவு செய்க</strong> tab on the login page.</li>
+                <li>Select <strong>Staff / பணியாளர்</strong>.</li>
+                <li>Enter your <strong>Unique Mill Code</strong> shown above.</li>
+                <li>Fill in their username &amp; password &mdash; their account joins your mill automatically!</li>
+              </ol>
+            </div>
+
+            <p class="form-message" id="userFormMessage" aria-live="polite" style="margin-top:0.75rem"></p>
           </section>
 
           <!-- TEAM -->

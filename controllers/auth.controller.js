@@ -104,13 +104,31 @@ async function generateUniqueCode(prefix = 'OWN') {
 }
 
 async function listUsers(req, res) {
-  const [rows] = await pool.query('SELECT * FROM users ORDER BY created_at ASC');
-  const sanitized = rows.map(u => {
-    const copy = Object.assign({}, u);
-    delete copy.password_hash;
-    return copy;
-  });
-  res.json({ users: sanitized });
+  try {
+    let query = 'SELECT * FROM users';
+    const params = [];
+    if (req.user && req.user.role === 'admin') {
+      try {
+        const [cols] = await pool.query("SHOW COLUMNS FROM users LIKE 'owner_id'");
+        if (cols.length > 0) {
+          query = 'SELECT * FROM users WHERE id = ? OR owner_id = ? OR (role = "staff" AND owner_id IS NULL) ORDER BY created_at ASC';
+          params.push(req.user.id, req.user.id);
+        }
+      } catch (e) {
+        // fallback to all users if column check fails
+      }
+    }
+    const [rows] = await pool.query(query, params);
+    const sanitized = rows.map(u => {
+      const copy = Object.assign({}, u);
+      delete copy.password_hash;
+      return copy;
+    });
+    res.json({ users: sanitized });
+  } catch (err) {
+    console.error('listUsers error:', err.message);
+    res.status(500).json({ message: 'Error fetching users: ' + err.message });
+  }
 }
 
 async function register(req, res) {

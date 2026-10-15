@@ -166,34 +166,40 @@ async function renderUserList() {
   });
 }
 
-async function handleAddUser() {
-  const name     = document.getElementById('newUserName').value.trim();
-  const username = document.getElementById('newUsername').value.trim();
-  const role     = document.getElementById('newUserRole').value;
-  const password = document.getElementById('newUserPassword').value;
-
-  if (!name)     return showMsg('userFormMessage', 'Enter a full name.', true);
-  if (!username) return showMsg('userFormMessage', 'Enter a username.', true);
-  if (!password || password.length < 6) return showMsg('userFormMessage', 'Password must be at least 6 characters.', true);
-
-  try {
-    await apiFetch('/auth/register', { method: 'POST', body: JSON.stringify({ name, username, role, password }) });
-    document.getElementById('newUserForm').reset();
-    showMsg('userFormMessage', `\u2713 Account "${username}" created.`);
-    renderUserList();
-  } catch (e) {
-    showMsg('userFormMessage', e.message, true);
-  }
+if (document.getElementById('addProductBtn')) {
+  document.getElementById('addProductBtn').addEventListener('click', handleAddProduct);
 }
-
-document.getElementById('addProductBtn').addEventListener('click', handleAddProduct);
-document.getElementById('addUserBtn').addEventListener('click', handleAddUser);
 
 // ── Init (admin-only page) ──────────────────────────────────────
 (async function () {
   const user = await requireAuth({ role: 'admin' });
   if (!user) return;
   currentUserId = user.id;
+
+  // Display owner's unique mill code
+  const code = (user.unique_code || user.uniqueCode || '').trim();
+  const codeEl = document.getElementById('ownerMillCodeDisplay');
+  if (codeEl) {
+    codeEl.textContent = code || 'OWN-......';
+  }
+
+  const copyBtn = document.getElementById('btnCopyMillCode');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      if (!code) return;
+      navigator.clipboard.writeText(code).then(() => {
+        const textSpan = document.getElementById('copyMillCodeText');
+        if (textSpan) textSpan.textContent = 'Copied! ✓';
+        if (typeof showToast === 'function') showToast(`Copied ${code} to clipboard!`);
+        setTimeout(() => {
+          if (textSpan) textSpan.textContent = 'Copy / நகலெடு';
+        }, 2200);
+      }).catch(() => {
+        prompt('Copy your unique mill code:', code);
+      });
+    });
+  }
+
   renderProductList();
   renderUserList();
 })();

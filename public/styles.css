@@ -2191,3 +2191,46 @@ select option {
   }
   .receipt-panel::after { display: none; }
 }
+
+/* Mill Code Display Card & Staff Join Steps */
+.mill-code-card {
+  background: var(--page);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r);
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.mill-code-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--faint);
+  text-transform: uppercase;
+}
+.mill-code-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+.mill-code-value {
+  font-family: var(--mono-face);
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+.staff-join-steps {
+  background: rgba(30, 142, 62, 0.06);
+  border: 1px solid rgba(30, 142, 62, 0.18);
+  border-radius: var(--r);
+  padding: 0.85rem 1rem;
+}
+[data-theme="dark"] .staff-join-steps {
+  background: rgba(46, 125, 50, 0.12);
+  border-color: rgba(46, 125, 50, 0.28);
+}
+
