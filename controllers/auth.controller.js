@@ -170,6 +170,30 @@ async function signup(req, res) {
   const cleanName = String(name).trim();
   const assignedRole = role === 'staff' ? 'staff' : 'admin';
 
+  // 1. Prevent fake Gmail accounts: Gmail users MUST authenticate via "Continue with Google"
+  const lowerUser = cleanUsername.toLowerCase();
+  if (lowerUser.endsWith('@gmail.com') || lowerUser.endsWith('@googlemail.com')) {
+    return res.status(400).json({
+      message: 'Gmail accounts must sign in using the "Continue with Google" button / ஜிமெயில் கணக்குகளுக்கு "Continue with Google" பொத்தானைப் பயன்படுத்தவும்.'
+    });
+  }
+
+  // 2. Validate email structure or username format
+  if (cleanUsername.includes('@')) {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(cleanUsername)) {
+      return res.status(400).json({ message: 'Please provide a valid email address / சரியான மின்னஞ்சல் முகவரியை உள்ளிடவும்.' });
+    }
+    const fakeDomains = ['tempmail', '10minutemail', 'mailinator', 'guerrillamail', 'throwawaymail', 'fake.com', 'test.com'];
+    if (fakeDomains.some(d => lowerUser.includes(d))) {
+      return res.status(400).json({ message: 'Disposable or fake test emails are not allowed / தற்காலிக மின்னஞ்சல்கள் அனுமதிக்கப்படாது.' });
+    }
+  } else {
+    if (!/^[a-zA-Z0-9_]{3,24}$/.test(cleanUsername)) {
+      return res.status(400).json({ message: 'Username must be 3-24 characters (letters, numbers, underscore) / பயனர்பெயர் 3-24 எழுத்துக்கள் இருக்க வேண்டும்.' });
+    }
+  }
+
   if (password.length < 6) {
     return res.status(400).json({ message: 'Password must be at least 6 characters long.' });
   }
@@ -221,7 +245,7 @@ async function signup(req, res) {
   });
 }
 
-// Helper to retrieve Google credentials from environment or local secret file (no hardcoded secrets)
+// Helper to retrieve Google credentials from environment or local secret file
 function getGoogleCredentials() {
   let clientId = process.env.GOOGLE_CLIENT_ID || '';
   let clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
@@ -245,6 +269,7 @@ function getGoogleCredentials() {
       // ignore dynamic file reading errors
     }
   }
+
   return { clientId, clientSecret };
 }
 

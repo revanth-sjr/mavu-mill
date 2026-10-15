@@ -12,8 +12,14 @@
       } else {
         document.documentElement.setAttribute('data-theme', 'light');
       }
+      var params = new URLSearchParams(window.location.search);
+      var code = params.get('code');
       if (!localStorage.getItem('mavu_token')) {
-        window.location.replace('login.html');
+        if (code) {
+          window.location.replace('login.html?code=' + encodeURIComponent(code));
+        } else {
+          window.location.replace('login.html');
+        }
       }
     })();
   </script>

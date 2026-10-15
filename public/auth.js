@@ -981,6 +981,28 @@ if (signupForm) {
       if (signupError) signupError.textContent = 'Please fill in all required fields.';
       return;
     }
+
+    // Prevent fake Gmail accounts in manual signup: Gmail must authenticate via Google
+    const lowerUser = username.toLowerCase();
+    if (lowerUser.endsWith('@gmail.com') || lowerUser.endsWith('@googlemail.com')) {
+      const msg = 'Gmail accounts must sign in using "Continue with Google" / ஜிமெயில் கணக்குகளுக்கு "Continue with Google" பொத்தானைப் பயன்படுத்தவும்.';
+      if (signupError) signupError.textContent = msg;
+      showToast(msg, true);
+      return;
+    }
+
+    // Validate email or username
+    if (username.includes('@')) {
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(username)) {
+        if (signupError) signupError.textContent = 'Please enter a valid email address / சரியான மின்னஞ்சல் முகவரியை உள்ளிடவும்.';
+        return;
+      }
+    } else if (!/^[a-zA-Z0-9_]{3,24}$/.test(username)) {
+      if (signupError) signupError.textContent = 'Username must be 3-24 characters (letters, numbers, underscore) / பயனர்பெயர் 3-24 எழுத்துக்கள் இருக்க வேண்டும்.';
+      return;
+    }
+
     if (role === 'staff' && !ownerCode) {
       if (signupError) signupError.textContent = 'Please enter the Owner Unique Code (e.g. OWN-XXXXXX) / உரிமையாளர் குறியீட்டை உள்ளிடவும்.';
       if (ownerCodeInput) ownerCodeInput.focus();
@@ -1046,15 +1068,28 @@ let activeGoogleClientId = '';
     const res = await fetch(API_BASE + '/auth/google/config');
     if (res.ok) {
       const data = await res.json();
-      if (data && data.clientId) activeGoogleClientId = data.clientId;
+      if (data && data.clientId) {
+        activeGoogleClientId = data.clientId;
+        if (document.getElementById('googleBtnContainer')) {
+          initGoogleAuth();
+        }
+      }
     }
   } catch (e) {
     console.warn('Could not fetch Google auth config:', e);
   }
-  if (document.getElementById('googleBtnContainer')) {
-    initGoogleAuth();
-  }
 })();
+
+function getGoogleRedirectUri() {
+  const origin = window.location.origin;
+  if (origin.includes('localhost')) {
+    return origin + '/index.html';
+  }
+  if (origin.includes('qladoau67')) {
+    return 'https://mavu-mill-qladoau67-revanthsjr-7530.vercel.app/index.html';
+  }
+  return origin + '/index.html';
+}
 
 async function handleGoogleCredential(response) {
   try {
@@ -1086,11 +1121,39 @@ async function handleGoogleCredential(response) {
   }
 }
 
-function initGoogleAuth() {
-  if (!activeGoogleClientId) {
-    setTimeout(initGoogleAuth, 200);
-    return;
+async function exchangeGoogleAuthCode(code, redirectUri) {
+  try {
+    showToast('Verifying Google authorization / சரிபார்க்கிறது...');
+    const activeRole = document.getElementById('signupRole')?.value || 'admin';
+    const ownerCode = document.getElementById('signupOwnerCode')?.value?.trim();
+
+    const res = await fetch(API_BASE + '/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code,
+        redirectUri: redirectUri || getGoogleRedirectUri(),
+        role: activeRole,
+        ownerCode: activeRole === 'staff' ? ownerCode : undefined
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error((data && (data.error || data.message)) || 'Google authentication failed.');
+    }
+
+    setAuth(data.token, data.user, true);
+    showToast(`✓ Welcome, ${data.user.name || 'User'}!`);
+    setTimeout(() => { window.location.href = 'index.html'; }, 300);
+  } catch (err) {
+    console.error('Google OAuth code verification error:', err);
+    showToast('Google sign in error: ' + err.message, true);
+    const errBox = document.getElementById('loginError') || document.getElementById('signupError');
+    if (errBox) errBox.textContent = err.message || 'Google sign in failed.';
   }
+}
+
+function initGoogleAuth() {
   if (typeof google === 'undefined' || !google.accounts || !google.accounts.id) {
     setTimeout(initGoogleAuth, 300);
     return;
@@ -1121,20 +1184,59 @@ function initGoogleAuth() {
   }
 }
 
+function startGoogleAuthFlow() {
+  if (!activeGoogleClientId) {
+    showToast('Google credentials not found. Please set GOOGLE_CLIENT_ID in your deployment settings / கூகிள் உள்நுழைவுக்கான GOOGLE_CLIENT_ID அமைக்கப்படவில்லை.', true);
+    return;
+  }
+  const redirectUri = getGoogleRedirectUri();
+
+  // Try modern Google OAuth2 popup code client first
+  if (window.google && google.accounts && google.accounts.oauth2) {
+    try {
+      const tokenClient = google.accounts.oauth2.initCodeClient({
+        client_id: activeGoogleClientId,
+        scope: 'openid email profile',
+        ux_mode: 'popup',
+        callback: async (response) => {
+          if (response && response.code) {
+            await exchangeGoogleAuthCode(response.code, redirectUri);
+          }
+        },
+        error_callback: (err) => {
+          console.warn('Google popup error, falling back to redirect:', err);
+          redirectToGoogleOAuth(redirectUri);
+        }
+      });
+      tokenClient.requestCode();
+      return;
+    } catch (e) {
+      console.warn('initCodeClient failed, redirecting:', e);
+    }
+  }
+
+  // Direct OAuth2 redirect flow
+  redirectToGoogleOAuth(redirectUri);
+}
+
+function redirectToGoogleOAuth(redirectUri) {
+  showToast('Redirecting to Google / கூகிள் பக்கத்திற்கு செல்கிறது...');
+  const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth'
+    + '?client_id=' + encodeURIComponent(activeGoogleClientId)
+    + '&redirect_uri=' + encodeURIComponent(redirectUri)
+    + '&response_type=code'
+    + '&scope=' + encodeURIComponent('openid email profile')
+    + '&access_type=online'
+    + '&prompt=select_account';
+  window.location.href = authUrl;
+}
+
 // Custom fallback button click
 const btnCustomGoogle = document.getElementById('btnCustomGoogle');
 if (btnCustomGoogle) {
-  btnCustomGoogle.addEventListener('click', () => {
-    if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-      google.accounts.id.prompt();
-    } else {
-      // Direct OAuth 2.0 authorization code redirect flow
-      const redirectUri = window.location.origin.includes('localhost')
-        ? window.location.origin + '/index.html'
-        : 'https://mavu-mill-qladoau67-revanthsjr-7530.vercel.app/index.html';
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(activeGoogleClientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile&access_type=online&prompt=select_account`;
-      window.location.href = authUrl;
-    }
+  btnCustomGoogle.addEventListener('click', (e) => {
+    e.preventDefault();
+    startGoogleAuthFlow();
   });
 }
 
@@ -1145,31 +1247,11 @@ if (btnCustomGoogle) {
   if (!code) return;
 
   try {
-    // Clean code parameter from address bar
     const cleanPath = window.location.pathname;
     window.history.replaceState({}, document.title, cleanPath);
-
-    showToast('Verifying Google authorization...');
-    const redirectUri = window.location.origin.includes('localhost')
-      ? window.location.origin + '/index.html'
-      : 'https://mavu-mill-qladoau67-revanthsjr-7530.vercel.app/index.html';
-
-    const res = await fetch(API_BASE + '/auth/google', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, redirectUri })
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error((data && (data.error || data.message)) || 'Google authentication failed.');
-    }
-
-    setAuth(data.token, data.user, true);
-    showToast(`✓ Welcome, ${data.user.name || 'User'}!`);
-    setTimeout(() => { window.location.href = 'index.html'; }, 300);
+    await exchangeGoogleAuthCode(code, getGoogleRedirectUri());
   } catch (err) {
     console.error('Google OAuth code verification error:', err);
-    showToast('Google sign in error: ' + err.message, true);
   }
 })();
 
