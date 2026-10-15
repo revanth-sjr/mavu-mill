@@ -85,7 +85,10 @@ async function ensureSchema() {
       password_hash VARCHAR(255) NOT NULL,
       name          VARCHAR(100) NOT NULL,
       role          ENUM('admin', 'staff') NOT NULL DEFAULT 'staff',
-      created_at    DATETIME DEFAULT CURRENT_TIMESTAMP
+      unique_code   VARCHAR(30) NULL UNIQUE,
+      owner_id      INT NULL,
+      created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL
     )
   `);
 
@@ -155,6 +158,29 @@ async function ensureMigrations() {
     }
     console.log(`Migration complete: linked ${names.length} existing customer name(s) to new customer records.`);
   }
+
+  // Ensure unique_code and owner_id exist in users table
+  const [ucCols] = await pool.query(`SHOW COLUMNS FROM users LIKE 'unique_code'`);
+  if (ucCols.length === 0) {
+    console.log('Migrating: adding users.unique_code and owner_id ...');
+    await pool.query('ALTER TABLE users ADD COLUMN unique_code VARCHAR(30) NULL UNIQUE AFTER role');
+    await pool.query('ALTER TABLE users ADD COLUMN owner_id INT NULL AFTER unique_code');
+    await pool.query('ALTER TABLE users ADD CONSTRAINT fk_users_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL');
+  }
+
+  // Ensure all existing users have a unique_code
+  const [usersWithoutCode] = await pool.query('SELECT id, role, username FROM users WHERE unique_code IS NULL OR unique_code = ""');
+  for (const u of usersWithoutCode) {
+    const prefix = u.role === 'admin' ? 'OWN' : 'STF';
+    let code = `${prefix}-${Math.floor(100000 + Math.random() * 900000)}`;
+    let [exists] = await pool.query('SELECT id FROM users WHERE unique_code = ?', [code]);
+    while (exists.length > 0) {
+      code = `${prefix}-${Math.floor(100000 + Math.random() * 900000)}`;
+      [exists] = await pool.query('SELECT id FROM users WHERE unique_code = ?', [code]);
+    }
+    await pool.query('UPDATE users SET unique_code = ? WHERE id = ?', [code, u.id]);
+    console.log(`Generated unique code ${code} for user ${u.username} (${u.role})`);
+  }
 }
 
 async function seedDefaults() {
@@ -163,8 +189,8 @@ async function seedDefaults() {
     const adminHash = await bcrypt.hash('admin123', 10);
     const staffHash = await bcrypt.hash('staff123', 10);
     await pool.query(
-      'INSERT INTO users (username, password_hash, name, role) VALUES (?, ?, ?, ?), (?, ?, ?, ?)',
-      ['admin', adminHash, 'Owner Admin', 'admin', 'staff', staffHash, 'Billing Staff', 'staff']
+      'INSERT INTO users (username, password_hash, name, role, unique_code) VALUES (?, ?, ?, ?, ?), (?, ?, ?, ?, ?)',
+      ['admin', adminHash, 'Owner Admin', 'admin', 'OWN-100001', 'staff', staffHash, 'Billing Staff', 'staff', 'STF-100001']
     );
     console.log('Seeded default accounts: admin/admin123 (admin), staff/staff123 (staff). Change these!');
   }
@@ -240,23 +266,25 @@ async function ensureAdminAccount() {
     const newPassword = 'Admin@123';
 
     for (const username of targetAccounts) {
-      const [rows] = await pool.query('SELECT id, password_hash, role FROM users WHERE username = ?', [username]);
+      const [rows] = await pool.query('SELECT id, password_hash, role, unique_code FROM users WHERE username = ?', [username]);
       if (rows.length === 0) {
         const hash = await bcrypt.hash(newPassword, 10);
+        const code = `OWN-${Math.floor(100000 + Math.random() * 900000)}`;
         await pool.query(
-          'INSERT INTO users (username, password_hash, name, role) VALUES (?, ?, ?, ?)',
-          [username, hash, 'Revanth', 'admin']
+          'INSERT INTO users (username, password_hash, name, role, unique_code) VALUES (?, ?, ?, ?, ?)',
+          [username, hash, 'Revanth', 'admin', code]
         );
-        console.log(`Auto-provisioned admin account for ${username}`);
+        console.log(`Auto-provisioned admin account for ${username} with code ${code}`);
       } else {
         const matches = await bcrypt.compare(newPassword, rows[0].password_hash);
-        if (!matches || rows[0].role !== 'admin') {
+        const code = rows[0].unique_code || `OWN-${Math.floor(100000 + Math.random() * 900000)}`;
+        if (!matches || rows[0].role !== 'admin' || !rows[0].unique_code) {
           const hash = await bcrypt.hash(newPassword, 10);
           await pool.query(
-            'UPDATE users SET password_hash = ?, role = ? WHERE id = ?',
-            [hash, 'admin', rows[0].id]
+            'UPDATE users SET password_hash = ?, role = ?, unique_code = ? WHERE id = ?',
+            [hash, 'admin', code, rows[0].id]
           );
-          console.log(`Updated admin password and role for ${username}`);
+          console.log(`Updated admin password, role, and code (${code}) for ${username}`);
         }
       }
     }

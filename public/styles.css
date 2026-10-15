@@ -1303,6 +1303,65 @@ select option {
   box-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
 
+/* Account Type Choice in Signup */
+.account-type-pills {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+.account-type-pill {
+  border: 1.5px solid var(--line);
+  background: var(--page);
+  padding: 0.7rem 0.65rem;
+  border-radius: var(--r);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.account-type-pill:hover {
+  border-color: var(--mill);
+  background: var(--paper);
+}
+.account-type-pill.active {
+  border-color: var(--mill);
+  background: var(--wash);
+  box-shadow: 0 0 0 2px rgba(43, 168, 109, 0.2);
+}
+.account-type-pill .pill-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.25;
+}
+.account-type-pill.active .pill-title {
+  color: var(--mill);
+}
+.account-type-pill .pill-desc {
+  font-size: 0.7rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+[data-theme="dark"] .account-type-pill {
+  background: #0E1713;
+  border-color: #213A2E;
+}
+[data-theme="dark"] .account-type-pill:hover {
+  border-color: #46D38E;
+}
+[data-theme="dark"] .account-type-pill.active {
+  border-color: #46D38E;
+  background: #172F22;
+  box-shadow: 0 0 0 2px rgba(70, 211, 142, 0.25);
+}
+[data-theme="dark"] .account-type-pill.active .pill-title {
+  color: #46D38E;
+}
+
 .auth-switch-prompt {
   text-align: center;
   margin-top: 1.25rem;
@@ -1656,6 +1715,90 @@ select option {
   color: var(--muted);
   font-family: var(--mono-face);
   margin-bottom: 0.35rem;
+}
+
+/* User Unique Code Banner in Profile */
+.user-code-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.95rem 1.1rem;
+  background: var(--paper);
+  border: 1.5px solid var(--wash-deep);
+  border-radius: var(--r);
+  margin-bottom: 1.1rem;
+  flex-wrap: wrap;
+}
+.user-code-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.user-code-label .code-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--mill);
+}
+.user-code-label .code-desc {
+  font-size: 0.74rem;
+  color: var(--muted);
+  max-width: 340px;
+  line-height: 1.35;
+}
+.user-code-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--page);
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+}
+.user-code-val {
+  font-family: var(--mono-face);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.08em;
+}
+.btn-copy-code {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--mill);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.btn-copy-code:hover {
+  background: var(--mill-hover);
+  transform: translateY(-1px);
+}
+[data-theme="dark"] .user-code-banner {
+  background: #0E1713;
+  border-color: #213A2E;
+}
+[data-theme="dark"] .user-code-label .code-title {
+  color: #46D38E;
+}
+[data-theme="dark"] .user-code-box {
+  background: #14221A;
+  border-color: #213A2E;
+}
+[data-theme="dark"] .btn-copy-code {
+  background: #2BA86D;
+}
+[data-theme="dark"] .btn-copy-code:hover {
+  background: #39C27F;
 }
 .profile-grid-info {
   display: grid;

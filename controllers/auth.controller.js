@@ -18,7 +18,14 @@ async function login(req, res) {
   const token = signToken({ id: user.id }, !!rememberMe);
   res.json({
     token,
-    user: { id: user.id, username: user.username, name: user.name, role: user.role },
+    user: {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      role: user.role,
+      unique_code: user.unique_code,
+      uniqueCode: user.unique_code
+    },
     expiresIn: rememberMe ? '30d' : '12h'
   });
 }
@@ -34,7 +41,7 @@ async function updateProfile(req, res) {
   }
   await pool.query('UPDATE users SET name = ? WHERE id = ?', [name.trim(), req.user.id]);
   const [rows] = await pool.query(
-    'SELECT id, username, name, role, created_at FROM users WHERE id = ?',
+    'SELECT id, username, name, role, unique_code, created_at FROM users WHERE id = ?',
     [req.user.id]
   );
   res.json({ ok: true, user: rows[0], message: 'Profile updated successfully.' });
@@ -86,9 +93,19 @@ async function refreshToken(req, res) {
   res.json({ token, user: req.user, message: 'Session extended.' });
 }
 
+async function generateUniqueCode(prefix = 'OWN') {
+  let code = `${prefix}-${Math.floor(100000 + Math.random() * 900000)}`;
+  let [exists] = await pool.query('SELECT id FROM users WHERE unique_code = ?', [code]);
+  while (exists.length > 0) {
+    code = `${prefix}-${Math.floor(100000 + Math.random() * 900000)}`;
+    [exists] = await pool.query('SELECT id FROM users WHERE unique_code = ?', [code]);
+  }
+  return code;
+}
+
 async function listUsers(req, res) {
   const [rows] = await pool.query(
-    'SELECT id, username, name, role, created_at FROM users ORDER BY created_at ASC'
+    'SELECT id, username, name, role, unique_code, owner_id, created_at FROM users ORDER BY created_at ASC'
   );
   res.json({ users: rows });
 }
@@ -102,17 +119,20 @@ async function register(req, res) {
     return res.status(400).json({ message: 'Password must be at least 6 characters.' });
   }
 
-  const [existing] = await pool.query('SELECT id FROM users WHERE username = ?', [username.trim()]);
+  const cleanUsername = username.trim();
+  const [existing] = await pool.query('SELECT id FROM users WHERE username = ?', [cleanUsername]);
   if (existing.length) return res.status(409).json({ message: 'That username is already taken.' });
 
+  const code = await generateUniqueCode(role === 'admin' ? 'OWN' : 'STF');
+  const ownerId = role === 'staff' ? req.user.id : null;
   const hash = await bcrypt.hash(password, 10);
   const [result] = await pool.query(
-    'INSERT INTO users (username, password_hash, name, role) VALUES (?, ?, ?, ?)',
-    [username.trim(), hash, name.trim(), role]
+    'INSERT INTO users (username, password_hash, name, role, unique_code, owner_id) VALUES (?, ?, ?, ?, ?, ?)',
+    [cleanUsername, hash, name.trim(), role, code, ownerId]
   );
 
   res.status(201).json({
-    user: { id: result.insertId, username: username.trim(), name: name.trim(), role }
+    user: { id: result.insertId, username: cleanUsername, name: name.trim(), role, unique_code: code, uniqueCode: code }
   });
 }
 
@@ -139,16 +159,34 @@ async function deleteUser(req, res) {
 }
 
 async function signup(req, res) {
-  const { username, password, name, role = 'admin' } = req.body || {};
+  const { username, password, name, role = 'admin', ownerCode } = req.body || {};
   if (!username || !password || !name) {
     return res.status(400).json({ message: 'Full name, username and password are required.' });
   }
   const cleanUsername = String(username).trim();
   const cleanName = String(name).trim();
-  const assignedRole = ['admin', 'staff'].includes(role) ? role : 'admin';
+  const assignedRole = role === 'staff' ? 'staff' : 'admin';
 
   if (password.length < 6) {
     return res.status(400).json({ message: 'Password must be at least 6 characters long.' });
+  }
+
+  let ownerId = null;
+  if (assignedRole === 'staff') {
+    if (!ownerCode || !String(ownerCode).trim()) {
+      return res.status(400).json({ message: 'Owner unique code is required to register a staff account.' });
+    }
+    const cleanOwnerCode = String(ownerCode).trim().toUpperCase();
+    const [owners] = await pool.query(
+      'SELECT id, name, unique_code FROM users WHERE role = "admin" AND UPPER(TRIM(unique_code)) = ?',
+      [cleanOwnerCode]
+    );
+    if (!owners.length) {
+      return res.status(400).json({
+        message: 'Invalid Owner unique code. Please verify the code with your mill owner.'
+      });
+    }
+    ownerId = owners[0].id;
   }
 
   const [existing] = await pool.query('SELECT id FROM users WHERE username = ?', [cleanUsername]);
@@ -156,17 +194,27 @@ async function signup(req, res) {
     return res.status(409).json({ message: 'That username is already taken. Please sign in or use another username.' });
   }
 
+  const uniqueCode = await generateUniqueCode(assignedRole === 'admin' ? 'OWN' : 'STF');
   const hash = await bcrypt.hash(password, 10);
   const [result] = await pool.query(
-    'INSERT INTO users (username, password_hash, name, role) VALUES (?, ?, ?, ?)',
-    [cleanUsername, hash, cleanName, assignedRole]
+    'INSERT INTO users (username, password_hash, name, role, unique_code, owner_id) VALUES (?, ?, ?, ?, ?, ?)',
+    [cleanUsername, hash, cleanName, assignedRole, uniqueCode, ownerId]
   );
 
   const token = signToken({ id: result.insertId });
   res.status(201).json({
     token,
-    user: { id: result.insertId, username: cleanUsername, name: cleanName, role: assignedRole },
-    message: 'Account created successfully!'
+    user: {
+      id: result.insertId,
+      username: cleanUsername,
+      name: cleanName,
+      role: assignedRole,
+      unique_code: uniqueCode,
+      uniqueCode
+    },
+    message: assignedRole === 'admin'
+      ? `Owner account created! Your unique mill code is ${uniqueCode}.`
+      : 'Staff account created successfully!'
   });
 }
 

@@ -209,6 +209,20 @@ function ensureSettingsModal() {
           </div>
         </div>
 
+        <div class="user-code-banner" id="userCodeBanner">
+          <div class="user-code-label">
+            <span class="code-title">Unique Account Code / தனித்துவ குறியீடு</span>
+            <span class="code-desc" id="userCodeDesc">Share this code with your staff so they can create staff accounts.</span>
+          </div>
+          <div class="user-code-box">
+            <code class="user-code-val" id="settingsUniqueCode">—</code>
+            <button type="button" class="btn-copy-code" id="btnCopyUniqueCode" title="Copy code">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <span id="copyBtnText">Copy</span>
+            </button>
+          </div>
+        </div>
+
         <form id="profileUpdateForm" novalidate>
           <div class="field-group">
             <label for="editDisplayName">Display name / உங்கள் பெயர்</label>
@@ -222,6 +236,10 @@ function ensureSettingsModal() {
 
         <div class="profile-grid-info">
           <div class="profile-stat-box">
+            <div class="profile-stat-label">Unique Code</div>
+            <div class="profile-stat-val" id="profileCodeDetail" style="font-family:var(--mono-face);font-weight:700;color:var(--mill);">—</div>
+          </div>
+          <div class="profile-stat-box">
             <div class="profile-stat-label">Organization / ஆலை</div>
             <div class="profile-stat-val">சக்தி எண்ணெய் &amp; மாவு ஆலை</div>
           </div>
@@ -232,10 +250,6 @@ function ensureSettingsModal() {
           <div class="profile-stat-box">
             <div class="profile-stat-label">Registered Since</div>
             <div class="profile-stat-val" id="profileCreatedDetail">—</div>
-          </div>
-          <div class="profile-stat-box">
-            <div class="profile-stat-label">System Platform</div>
-            <div class="profile-stat-val">Vercel Cloud Serverless</div>
           </div>
         </div>
       </div>
@@ -482,6 +496,24 @@ function ensureSettingsModal() {
     }
   });
 
+  // Copy unique code button
+  const copyBtn = document.getElementById('btnCopyUniqueCode');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', async () => {
+      const code = document.getElementById('settingsUniqueCode')?.textContent;
+      if (!code || code === '—') return;
+      try {
+        await navigator.clipboard.writeText(code);
+        const copyText = document.getElementById('copyBtnText');
+        if (copyText) copyText.textContent = 'Copied!';
+        showToast('✓ Unique Code copied: ' + code);
+        setTimeout(() => { if (copyText) copyText.textContent = 'Copy'; }, 2000);
+      } catch (err) {
+        showToast('Unique code: ' + code);
+      }
+    });
+  }
+
   // Account tab actions
   document.getElementById('btnSettingsExtendSession').addEventListener('click', extendSession);
   document.getElementById('btnSettingsLogout').addEventListener('click', logout);
@@ -524,6 +556,22 @@ function populateSettingsModal(user) {
   if (roleEl) {
     roleEl.textContent = user.role === 'admin' ? 'Admin' : 'Staff';
     roleEl.className = `role-pill role-${user.role || 'staff'}`;
+  }
+
+  const code = user.unique_code || user.uniqueCode || '—';
+  const codeEl = document.getElementById('settingsUniqueCode');
+  if (codeEl) codeEl.textContent = code;
+
+  const codeDetail = document.getElementById('profileCodeDetail');
+  if (codeDetail) codeDetail.textContent = code;
+
+  const codeDesc = document.getElementById('userCodeDesc');
+  if (codeDesc) {
+    if (user.role === 'admin') {
+      codeDesc.textContent = 'Share this code with your staff so they can create staff accounts linked to your mill.';
+    } else {
+      codeDesc.textContent = 'Your staff member identification code.';
+    }
   }
 
   const editInput = document.getElementById('editDisplayName');
@@ -883,6 +931,30 @@ if (loginForm) {
 if (signupForm) {
   const signupError = document.getElementById('signupError');
   const signupBtn = document.getElementById('signupSubmitBtn');
+  const pillOwner = document.getElementById('pillAccountOwner');
+  const pillStaff = document.getElementById('pillAccountStaff');
+  const roleInput = document.getElementById('signupRole');
+  const ownerCodeWrap = document.getElementById('ownerCodeWrap');
+  const ownerCodeInput = document.getElementById('signupOwnerCode');
+
+  function setSignupRole(role) {
+    if (roleInput) roleInput.value = role;
+    if (role === 'staff') {
+      if (pillOwner) pillOwner.classList.remove('active');
+      if (pillStaff) pillStaff.classList.add('active');
+      if (ownerCodeWrap) {
+        ownerCodeWrap.style.display = 'block';
+        if (ownerCodeInput) ownerCodeInput.focus();
+      }
+    } else {
+      if (pillStaff) pillStaff.classList.remove('active');
+      if (pillOwner) pillOwner.classList.add('active');
+      if (ownerCodeWrap) ownerCodeWrap.style.display = 'none';
+    }
+  }
+
+  if (pillOwner) pillOwner.addEventListener('click', () => setSignupRole('admin'));
+  if (pillStaff) pillStaff.addEventListener('click', () => setSignupRole('staff'));
 
   signupForm.addEventListener('submit', async function (e) {
     e.preventDefault();
@@ -891,11 +963,17 @@ if (signupForm) {
     const name = document.getElementById('signupName')?.value.trim();
     const username = document.getElementById('signupUsername')?.value.trim();
     const role = document.getElementById('signupRole')?.value || 'admin';
+    const ownerCode = document.getElementById('signupOwnerCode')?.value.trim();
     const password = document.getElementById('signupPassword')?.value;
     const confirmPassword = document.getElementById('signupConfirmPassword')?.value;
 
     if (!name || !username || !password) {
       if (signupError) signupError.textContent = 'Please fill in all required fields.';
+      return;
+    }
+    if (role === 'staff' && !ownerCode) {
+      if (signupError) signupError.textContent = 'Please enter the Owner Unique Code (e.g. OWN-XXXXXX) / உரிமையாளர் குறியீட்டை உள்ளிடவும்.';
+      if (ownerCodeInput) ownerCodeInput.focus();
       return;
     }
     if (password.length < 6) {
@@ -916,7 +994,7 @@ if (signupForm) {
       const res = await fetch(API_BASE + '/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, username, password, role })
+        body: JSON.stringify({ name, username, password, role, ownerCode: role === 'staff' ? ownerCode : undefined })
       });
       const text = await res.text();
       let data = null;

@@ -115,7 +115,7 @@ async function renderUserList() {
     <div class="product-row" data-id="${u.id}">
       <div class="product-info">
         <span class="product-name">${u.name}${u.id === currentUserId ? ' <span style="color:var(--muted);font-weight:500">(you)</span>' : ''}</span>
-        <span class="product-unit">@${u.username}</span>
+        <span class="product-unit">@${u.username}${u.unique_code ? ` &middot; <code style="font-family:var(--mono-face);font-size:0.75rem;padding:2px 6px;border-radius:4px;background:var(--page);border:1px solid var(--line);letter-spacing:0.04em;font-weight:600;">${u.unique_code}</code>` : ''}</span>
       </div>
       <div class="product-rate-block">
         <span class="role-pill role-${u.role}">${u.role === 'admin' ? 'Admin' : 'Staff'}</span>

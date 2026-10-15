@@ -100,11 +100,27 @@
             <input id="signupUsername" type="text" placeholder="e.g. revanth or revanth@gmail.com" autocomplete="username" required>
           </div>
           <div class="field-group">
-            <label for="signupRole">Account Role / கணக்கு வகை</label>
-            <select id="signupRole">
-              <option value="admin">Admin / நிர்வாகி (Full access)</option>
-              <option value="staff">Staff / பணியாளர் (Billing counter)</option>
-            </select>
+            <label>Select Account Type / கணக்கு வகை</label>
+            <div class="account-type-pills" role="radiogroup" aria-label="Account Type">
+              <button type="button" class="account-type-pill active" id="pillAccountOwner" data-role="admin">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <span>Owner / உரிமையாளர்</span>
+              </button>
+              <button type="button" class="account-type-pill" id="pillAccountStaff" data-role="staff">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>Staff / பணியாளர்</span>
+              </button>
+            </div>
+            <input type="hidden" id="signupRole" value="admin">
+          </div>
+
+          <!-- OWNER CODE FIELD (Required & displayed only when Staff account is chosen) -->
+          <div class="field-group" id="ownerCodeWrap" style="display:none;">
+            <label for="signupOwnerCode">Owner Unique Code / உரிமையாளர் குறியீடு <span style="color:var(--clay)">*</span></label>
+            <input id="signupOwnerCode" type="text" placeholder="e.g. OWN-616826" autocomplete="off" style="text-transform:uppercase;font-family:var(--mono-face);font-weight:600;letter-spacing:1px;">
+            <p class="field-hint" style="color:var(--muted);font-size:0.75rem;margin-top:0.3rem;">
+              Enter the unique code provided by your Mill Owner to join this mill counter.
+            </p>
           </div>
           <div class="field-group">
             <label for="signupPassword">Password / கடவுச்சொல் <span style="color:var(--faint);font-weight:500">— min 6 chars</span></label>
