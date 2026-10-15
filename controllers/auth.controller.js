@@ -331,11 +331,32 @@ async function googleAuth(req, res) {
     const googleId = payload.sub;
     const picture = payload.picture || null;
 
-    // A. Check if user exists by google_id
+    // Helper to ensure google_id and avatar_url columns exist before querying
+    try {
+      const [colCheck] = await pool.query(`SHOW COLUMNS FROM users LIKE 'google_id'`);
+      if (colCheck.length === 0) {
+        await pool.query('ALTER TABLE users ADD COLUMN google_id VARCHAR(100) NULL');
+        try {
+          await pool.query('ALTER TABLE users ADD UNIQUE INDEX idx_users_google_id (google_id)');
+        } catch (e) {}
+      }
+      const [avCheck] = await pool.query(`SHOW COLUMNS FROM users LIKE 'avatar_url'`);
+      if (avCheck.length === 0) {
+        await pool.query('ALTER TABLE users ADD COLUMN avatar_url VARCHAR(255) NULL');
+      }
+    } catch (colErr) {
+      console.warn('Column auto-migration check in googleAuth:', colErr.message);
+    }
+
+    // A. Check if user exists by google_id (safe from "Unknown column 'google_id'" errors)
     let user = null;
     if (googleId) {
-      const [byGid] = await pool.query('SELECT * FROM users WHERE google_id = ?', [googleId]);
-      if (byGid.length) user = byGid[0];
+      try {
+        const [byGid] = await pool.query('SELECT * FROM users WHERE google_id = ?', [googleId]);
+        if (byGid.length) user = byGid[0];
+      } catch (gidErr) {
+        console.warn('Query by google_id skipped (column not ready):', gidErr.message);
+      }
     }
 
     // B. Check by email or username
@@ -347,7 +368,7 @@ async function googleAuth(req, res) {
         try {
           await pool.query('UPDATE users SET google_id = ?, avatar_url = COALESCE(avatar_url, ?) WHERE id = ?', [googleId, picture, user.id]);
         } catch (e) {
-          // ignore column warning if column was not ready
+          // ignore column error if table structure is being updated
         }
       }
     }
@@ -367,11 +388,22 @@ async function googleAuth(req, res) {
       const randomPassword = crypto.randomBytes(32).toString('hex');
       const hash = await bcrypt.hash(randomPassword, 10);
 
-      const [resInsert] = await pool.query(
-        'INSERT INTO users (username, password_hash, name, role, unique_code, owner_id, google_id, avatar_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [email, hash, name, assignedRole, uniqueCode, ownerId, googleId, picture]
-      );
-      const [createdRows] = await pool.query('SELECT * FROM users WHERE id = ?', [resInsert.insertId]);
+      let insertId = null;
+      try {
+        const [resInsert] = await pool.query(
+          'INSERT INTO users (username, password_hash, name, role, unique_code, owner_id, google_id, avatar_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          [email, hash, name, assignedRole, uniqueCode, ownerId, googleId, picture]
+        );
+        insertId = resInsert.insertId;
+      } catch (insErr) {
+        const [resInsert] = await pool.query(
+          'INSERT INTO users (username, password_hash, name, role, unique_code, owner_id) VALUES (?, ?, ?, ?, ?, ?)',
+          [email, hash, name, assignedRole, uniqueCode, ownerId]
+        );
+        insertId = resInsert.insertId;
+      }
+
+      const [createdRows] = await pool.query('SELECT * FROM users WHERE id = ?', [insertId]);
       user = createdRows[0];
     }
 

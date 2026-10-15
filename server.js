@@ -146,23 +146,28 @@ async function ensureSchema() {
 // table existed (i.e. an `orders` table with no `customer_id` column yet).
 // Safe to run every boot — it only acts if the column is actually missing.
 async function ensureMigrations() {
-  const [cols] = await pool.query(`SHOW COLUMNS FROM orders LIKE 'customer_id'`);
-  if (cols.length === 0) {
-    console.log('Migrating: adding orders.customer_id ...');
-    await pool.query('ALTER TABLE orders ADD COLUMN customer_id INT NULL AFTER customer_name');
-    await pool.query(
-      'ALTER TABLE orders ADD CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL'
-    );
+  try {
+    const [cols] = await pool.query(`SHOW COLUMNS FROM orders LIKE 'customer_id'`);
+    if (cols.length === 0) {
+      console.log('Migrating: adding orders.customer_id ...');
+      await pool.query('ALTER TABLE orders ADD COLUMN customer_id INT NULL AFTER customer_name');
+      try {
+        await pool.query(
+          'ALTER TABLE orders ADD CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL'
+        );
+      } catch (fkErr) {
+        console.warn('Migration warning (fk_orders_customer):', fkErr.message);
+      }
 
-    // Backfill: create a customer record for each distinct existing name
-    // (best-effort, no phone numbers exist for old orders) and link orders
-    // to it, so historical orders join the same dashboard logic as new ones.
-    const [names] = await pool.query('SELECT DISTINCT customer_name FROM orders');
-    for (const row of names) {
-      const [result] = await pool.query('INSERT INTO customers (name, phone) VALUES (?, NULL)', [row.customer_name]);
-      await pool.query('UPDATE orders SET customer_id = ? WHERE customer_name = ? AND customer_id IS NULL', [result.insertId, row.customer_name]);
+      const [names] = await pool.query('SELECT DISTINCT customer_name FROM orders');
+      for (const row of names) {
+        const [result] = await pool.query('INSERT INTO customers (name, phone) VALUES (?, NULL)', [row.customer_name]);
+        await pool.query('UPDATE orders SET customer_id = ? WHERE customer_name = ? AND customer_id IS NULL', [result.insertId, row.customer_name]);
+      }
+      console.log(`Migration complete: linked ${names.length} existing customer name(s) to new customer records.`);
     }
-    console.log(`Migration complete: linked ${names.length} existing customer name(s) to new customer records.`);
+  } catch (err) {
+    console.warn('Migration warning (orders.customer_id):', err.message);
   }
 
   // 1. Ensure unique_code exists in users table (without UNIQUE constraint initially)
@@ -220,7 +225,12 @@ async function ensureMigrations() {
     const [gidCols] = await pool.query(`SHOW COLUMNS FROM users LIKE 'google_id'`);
     if (gidCols.length === 0) {
       console.log('Migrating: adding users.google_id ...');
-      await pool.query('ALTER TABLE users ADD COLUMN google_id VARCHAR(100) NULL UNIQUE');
+      await pool.query('ALTER TABLE users ADD COLUMN google_id VARCHAR(100) NULL');
+      try {
+        await pool.query('ALTER TABLE users ADD UNIQUE INDEX idx_users_google_id (google_id)');
+      } catch (idxErr) {
+        // ignore if index already exists
+      }
     }
   } catch (err) {
     console.warn('Migration warning (users.google_id):', err.message);
