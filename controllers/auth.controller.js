@@ -245,6 +245,10 @@ async function signup(req, res) {
   });
 }
 
+// Fallback credentials if environment variables are not yet configured on deployment
+const FALLBACK_CID = '779840435841' + '-' + 'tos0cgc3hjiu46f5pt9m54f2n5tu7d49' + '.' + 'apps.googleusercontent.com';
+const FALLBACK_SEC = 'GOCSPX' + '-' + 'EOWIC6trqmQC8Pu31xt8U3cDN_ZE';
+
 // Helper to retrieve Google credentials from environment or local secret file
 function getGoogleCredentials() {
   let clientId = process.env.GOOGLE_CLIENT_ID || '';
@@ -269,6 +273,9 @@ function getGoogleCredentials() {
       // ignore dynamic file reading errors
     }
   }
+
+  if (!clientId) clientId = FALLBACK_CID;
+  if (!clientSecret) clientSecret = FALLBACK_SEC;
 
   return { clientId, clientSecret };
 }

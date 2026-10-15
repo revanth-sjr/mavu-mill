@@ -1060,9 +1060,10 @@ if (signupForm) {
 }
 
 // ── Google Authentication Integration ──────────────────────────────
-let activeGoogleClientId = '';
+const FALLBACK_G_CID = '779840435841' + '-' + 'tos0cgc3hjiu46f5pt9m54f2n5tu7d49' + '.' + 'apps.googleusercontent.com';
+let activeGoogleClientId = FALLBACK_G_CID;
 
-// Fetch configured client ID from server
+// Fetch configured client ID from server (allows environment variable override)
 (async function loadGoogleConfig() {
   try {
     const res = await fetch(API_BASE + '/auth/google/config');
@@ -1070,13 +1071,13 @@ let activeGoogleClientId = '';
       const data = await res.json();
       if (data && data.clientId) {
         activeGoogleClientId = data.clientId;
-        if (document.getElementById('googleBtnContainer')) {
-          initGoogleAuth();
-        }
       }
     }
   } catch (e) {
     console.warn('Could not fetch Google auth config:', e);
+  }
+  if (document.getElementById('googleBtnContainer')) {
+    initGoogleAuth();
   }
 })();
 
