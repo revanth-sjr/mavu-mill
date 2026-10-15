@@ -9,17 +9,23 @@ async function authenticate(req, res, next) {
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) return res.status(401).json({ message: 'Not logged in.' });
 
+  let payload;
   try {
-    const payload = verifyToken(token);
-    const [rows] = await pool.query(
-      'SELECT id, username, name, role, unique_code, created_at FROM users WHERE id = ?',
-      [payload.id]
-    );
-    if (!rows.length) return res.status(401).json({ message: 'Account no longer exists.' });
-    req.user = rows[0];
-    next();
+    payload = verifyToken(token);
   } catch (err) {
     return res.status(401).json({ message: 'Session expired. Please log in again.' });
+  }
+
+  try {
+    const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [payload.id]);
+    if (!rows.length) return res.status(401).json({ message: 'Account no longer exists.' });
+    const user = Object.assign({}, rows[0]);
+    delete user.password_hash;
+    req.user = user;
+    next();
+  } catch (dbErr) {
+    console.error('Database error in authenticate middleware:', dbErr.message);
+    return res.status(500).json({ message: 'Database error verifying session: ' + dbErr.message });
   }
 }
 

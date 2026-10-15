@@ -40,11 +40,10 @@ async function updateProfile(req, res) {
     return res.status(400).json({ message: 'Display name cannot be empty.' });
   }
   await pool.query('UPDATE users SET name = ? WHERE id = ?', [name.trim(), req.user.id]);
-  const [rows] = await pool.query(
-    'SELECT id, username, name, role, unique_code, created_at FROM users WHERE id = ?',
-    [req.user.id]
-  );
-  res.json({ ok: true, user: rows[0], message: 'Profile updated successfully.' });
+  const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [req.user.id]);
+  const user = Object.assign({}, rows[0] || {});
+  delete user.password_hash;
+  res.json({ ok: true, user, message: 'Profile updated successfully.' });
 }
 
 async function changePassword(req, res) {
@@ -104,10 +103,13 @@ async function generateUniqueCode(prefix = 'OWN') {
 }
 
 async function listUsers(req, res) {
-  const [rows] = await pool.query(
-    'SELECT id, username, name, role, unique_code, owner_id, created_at FROM users ORDER BY created_at ASC'
-  );
-  res.json({ users: rows });
+  const [rows] = await pool.query('SELECT * FROM users ORDER BY created_at ASC');
+  const sanitized = rows.map(u => {
+    const copy = Object.assign({}, u);
+    delete copy.password_hash;
+    return copy;
+  });
+  res.json({ users: sanitized });
 }
 
 async function register(req, res) {

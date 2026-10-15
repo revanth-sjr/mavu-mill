@@ -163,29 +163,29 @@ async function ensureMigrations() {
     console.log(`Migration complete: linked ${names.length} existing customer name(s) to new customer records.`);
   }
 
-  // Ensure unique_code exists in users table
+  // 1. Ensure unique_code exists in users table (without UNIQUE constraint initially)
   try {
     const [ucCols] = await pool.query(`SHOW COLUMNS FROM users LIKE 'unique_code'`);
     if (ucCols.length === 0) {
       console.log('Migrating: adding users.unique_code ...');
-      await pool.query('ALTER TABLE users ADD COLUMN unique_code VARCHAR(30) NULL UNIQUE');
+      await pool.query('ALTER TABLE users ADD COLUMN unique_code VARCHAR(30) NULL DEFAULT NULL');
     }
   } catch (err) {
     console.warn('Migration warning (users.unique_code):', err.message);
   }
 
-  // Ensure owner_id exists in users table
+  // 2. Ensure owner_id exists in users table
   try {
     const [ownerCols] = await pool.query(`SHOW COLUMNS FROM users LIKE 'owner_id'`);
     if (ownerCols.length === 0) {
       console.log('Migrating: adding users.owner_id ...');
-      await pool.query('ALTER TABLE users ADD COLUMN owner_id INT NULL');
+      await pool.query('ALTER TABLE users ADD COLUMN owner_id INT NULL DEFAULT NULL');
     }
   } catch (err) {
     console.warn('Migration warning (users.owner_id):', err.message);
   }
 
-  // Ensure all existing users have a unique_code
+  // 3. Ensure all existing users have a unique_code
   try {
     const [usersWithoutCode] = await pool.query('SELECT id, role, username FROM users WHERE unique_code IS NULL OR unique_code = ""');
     for (const u of usersWithoutCode) {
@@ -201,6 +201,16 @@ async function ensureMigrations() {
     }
   } catch (err) {
     console.warn('Migration warning (backfill unique_code):', err.message);
+  }
+
+  // 4. Try adding unique index if not already present
+  try {
+    const [indexes] = await pool.query(`SHOW INDEX FROM users WHERE Key_name = 'unique_code' OR Key_name = 'idx_users_unique_code'`);
+    if (indexes.length === 0) {
+      await pool.query('ALTER TABLE users ADD UNIQUE INDEX idx_users_unique_code (unique_code)');
+    }
+  } catch (err) {
+    console.warn('Migration warning (unique_code index):', err.message);
   }
 }
 
