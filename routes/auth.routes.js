@@ -4,6 +4,7 @@ const { authenticate, requireAdmin } = require('../middleware/auth');
 const ctrl = require('../controllers/auth.controller');
 
 router.post('/login', ctrl.login);
+router.post('/signup', ctrl.signup);
 router.get('/me', authenticate, ctrl.me);
 router.put('/profile', authenticate, ctrl.updateProfile);
 router.post('/refresh', authenticate, ctrl.refreshToken);

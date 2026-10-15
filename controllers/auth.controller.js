@@ -138,8 +138,41 @@ async function deleteUser(req, res) {
   res.json({ ok: true });
 }
 
+async function signup(req, res) {
+  const { username, password, name, role = 'admin' } = req.body || {};
+  if (!username || !password || !name) {
+    return res.status(400).json({ message: 'Full name, username and password are required.' });
+  }
+  const cleanUsername = String(username).trim();
+  const cleanName = String(name).trim();
+  const assignedRole = ['admin', 'staff'].includes(role) ? role : 'admin';
+
+  if (password.length < 6) {
+    return res.status(400).json({ message: 'Password must be at least 6 characters long.' });
+  }
+
+  const [existing] = await pool.query('SELECT id FROM users WHERE username = ?', [cleanUsername]);
+  if (existing.length) {
+    return res.status(409).json({ message: 'That username is already taken. Please sign in or use another username.' });
+  }
+
+  const hash = await bcrypt.hash(password, 10);
+  const [result] = await pool.query(
+    'INSERT INTO users (username, password_hash, name, role) VALUES (?, ?, ?, ?)',
+    [cleanUsername, hash, cleanName, assignedRole]
+  );
+
+  const token = signToken({ id: result.insertId });
+  res.status(201).json({
+    token,
+    user: { id: result.insertId, username: cleanUsername, name: cleanName, role: assignedRole },
+    message: 'Account created successfully!'
+  });
+}
+
 module.exports = {
   login,
+  signup,
   me,
   updateProfile,
   changePassword,

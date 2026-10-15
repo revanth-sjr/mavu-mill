@@ -781,8 +781,43 @@ async function requireAuth(opts = {}) {
   }
 }
 
-// ── Login page wiring ─────────────────────────────────────────────
+// ── Login & Signup page wiring ─────────────────────────────────────
 const loginForm = document.getElementById('loginForm');
+const signupForm = document.getElementById('signupForm');
+const tabSignIn = document.getElementById('tabSignIn');
+const tabSignUp = document.getElementById('tabSignUp');
+const linkToSignup = document.getElementById('linkToSignup');
+const linkToSignin = document.getElementById('linkToSignin');
+const authMainTitle = document.getElementById('authMainTitle');
+const authSubTitle = document.getElementById('authSubTitle');
+
+function setAuthMode(mode) {
+  if (mode === 'signup') {
+    if (loginForm) loginForm.style.display = 'none';
+    if (signupForm) signupForm.style.display = 'block';
+    if (tabSignIn) tabSignIn.classList.remove('active');
+    if (tabSignUp) tabSignUp.classList.add('active');
+    if (authMainTitle) authMainTitle.textContent = 'Create account';
+    if (authSubTitle) authSubTitle.textContent = 'புதிய கணக்கு பதிவு செய்க';
+    const nameInput = document.getElementById('signupName');
+    if (nameInput) nameInput.focus();
+  } else {
+    if (signupForm) signupForm.style.display = 'none';
+    if (loginForm) loginForm.style.display = 'block';
+    if (tabSignUp) tabSignUp.classList.remove('active');
+    if (tabSignIn) tabSignIn.classList.add('active');
+    if (authMainTitle) authMainTitle.textContent = 'Sign in';
+    if (authSubTitle) authSubTitle.textContent = 'உள்நுழைய';
+    const userInput = document.getElementById('loginUsername');
+    if (userInput) userInput.focus();
+  }
+}
+
+if (tabSignIn) tabSignIn.addEventListener('click', () => setAuthMode('signin'));
+if (tabSignUp) tabSignUp.addEventListener('click', () => setAuthMode('signup'));
+if (linkToSignup) linkToSignup.addEventListener('click', () => setAuthMode('signup'));
+if (linkToSignin) linkToSignin.addEventListener('click', () => setAuthMode('signin'));
+
 if (loginForm) {
   const loginError = document.getElementById('loginError');
   const loginBtn = document.getElementById('loginSubmitBtn');
@@ -841,6 +876,75 @@ if (loginForm) {
       loginError.textContent = err.message || 'Could not reach the server. Please check your connection and try again.';
     } finally {
       if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Sign in'; }
+    }
+  });
+}
+
+if (signupForm) {
+  const signupError = document.getElementById('signupError');
+  const signupBtn = document.getElementById('signupSubmitBtn');
+
+  signupForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (signupError) signupError.textContent = '';
+
+    const name = document.getElementById('signupName')?.value.trim();
+    const username = document.getElementById('signupUsername')?.value.trim();
+    const role = document.getElementById('signupRole')?.value || 'admin';
+    const password = document.getElementById('signupPassword')?.value;
+    const confirmPassword = document.getElementById('signupConfirmPassword')?.value;
+
+    if (!name || !username || !password) {
+      if (signupError) signupError.textContent = 'Please fill in all required fields.';
+      return;
+    }
+    if (password.length < 6) {
+      if (signupError) signupError.textContent = 'Password must be at least 6 characters.';
+      return;
+    }
+    if (password !== confirmPassword) {
+      if (signupError) signupError.textContent = 'Passwords do not match. Please re-enter.';
+      return;
+    }
+
+    if (signupBtn) {
+      signupBtn.disabled = true;
+      signupBtn.textContent = 'Creating account...';
+    }
+
+    try {
+      const res = await fetch(API_BASE + '/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, username, password, role })
+      });
+      const text = await res.text();
+      let data = null;
+      try {
+        data = JSON.parse(text);
+      } catch (parseErr) {
+        if (text.includes('<!DOCTYPE html>') || text.includes('sso-api') || text.includes('Vercel')) {
+          signupError.textContent = 'Vercel Deployment Protection is enabled. Please disable "Vercel Authentication" under Project Settings > Deployment Protection.';
+          return;
+        }
+        throw parseErr;
+      }
+
+      if (!res.ok) {
+        if (signupError) signupError.textContent = (data && data.message) || 'Registration failed. Please try again.';
+        return;
+      }
+
+      setAuth(data.token, data.user, true);
+      window.location.href = 'index.html';
+    } catch (err) {
+      console.error('Signup error:', err);
+      if (signupError) signupError.textContent = err.message || 'Could not connect to server. Please try again.';
+    } finally {
+      if (signupBtn) {
+        signupBtn.disabled = false;
+        signupBtn.textContent = 'Create account & Sign in';
+      }
     }
   });
 }

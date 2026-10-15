@@ -54,8 +54,13 @@
     <section class="auth-main">
       <div class="auth-card">
         <div class="auth-brand">
-          <h1>Sign in</h1>
-          <p class="header-sub">உள்நுழைய</p>
+          <h1 id="authMainTitle">Sign in</h1>
+          <p class="header-sub" id="authSubTitle">உள்நுழைய</p>
+        </div>
+
+        <div class="auth-mode-pills" role="tablist" aria-label="Sign in or Sign up">
+          <button type="button" class="auth-mode-pill active" id="tabSignIn">Sign in / உள்நுழைய</button>
+          <button type="button" class="auth-mode-pill" id="tabSignUp">Sign up / பதிவு செய்க</button>
         </div>
 
         <div id="sessionNotice" class="auth-alert" style="display:none;" role="status"></div>
@@ -63,7 +68,7 @@
         <form id="loginForm" novalidate>
           <div class="field-group">
             <label for="loginUsername">Username / பயனர்பெயர்</label>
-            <input id="loginUsername" type="text" placeholder="Your username" autocomplete="username" required>
+            <input id="loginUsername" type="text" placeholder="Your username or email" autocomplete="username" required>
           </div>
           <div class="field-group">
             <label for="loginPassword">Password / கடவுச்சொல்</label>
@@ -79,13 +84,44 @@
 
           <button type="submit" class="btn btn-primary" id="loginSubmitBtn" style="width:100%;margin-top:0.5rem">Sign in</button>
           <p class="form-message" id="loginError" aria-live="polite"></p>
+
+          <p class="auth-switch-prompt">
+            Don't have an account? <button type="button" class="btn-link-auth" id="linkToSignup">Create account / புதிய கணக்கு</button>
+          </p>
         </form>
 
-        <div class="demo-hint">
-          <strong>First time here?</strong> Use a starter account, then create your own and remove these.<br>
-          Admin — <code>admin</code> / <code>admin123</code><br>
-          Staff — <code>staff</code> / <code>staff123</code>
-        </div>
+        <form id="signupForm" style="display:none;" novalidate>
+          <div class="field-group">
+            <label for="signupName">Full Name / முழுப் பெயர்</label>
+            <input id="signupName" type="text" placeholder="e.g. Revanth" autocomplete="name" required>
+          </div>
+          <div class="field-group">
+            <label for="signupUsername">Username / பயனர்பெயர்</label>
+            <input id="signupUsername" type="text" placeholder="e.g. revanth or revanth@gmail.com" autocomplete="username" required>
+          </div>
+          <div class="field-group">
+            <label for="signupRole">Account Role / கணக்கு வகை</label>
+            <select id="signupRole">
+              <option value="admin">Admin / நிர்வாகி (Full access)</option>
+              <option value="staff">Staff / பணியாளர் (Billing counter)</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="signupPassword">Password / கடவுச்சொல் <span style="color:var(--faint);font-weight:500">— min 6 chars</span></label>
+            <input id="signupPassword" type="password" placeholder="Choose a password (min 6 characters)" autocomplete="new-password" minlength="6" required>
+          </div>
+          <div class="field-group">
+            <label for="signupConfirmPassword">Confirm Password / கடவுச்சொல்லை உறுதிப்படுத்து</label>
+            <input id="signupConfirmPassword" type="password" placeholder="Re-type your password" autocomplete="new-password" minlength="6" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="signupSubmitBtn" style="width:100%;margin-top:0.5rem">Create account &amp; Sign in</button>
+          <p class="form-message" id="signupError" aria-live="polite"></p>
+
+          <p class="auth-switch-prompt">
+            Already have an account? <button type="button" class="btn-link-auth" id="linkToSignin">Sign in / உள்நுழைய</button>
+          </p>
+        </form>
       </div>
     </section>
 

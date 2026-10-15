@@ -1255,27 +1255,82 @@ select option {
 
 .auth-main { display: grid; place-items: center; padding: 2rem 1.5rem; }
 .auth-card { width: 100%; max-width: 372px; }
-.auth-brand { margin-bottom: 1.6rem; }
-.auth-brand h1 { font-size: 1.32rem; color: var(--ink); line-height: 1.3; }
-.auth-brand .header-sub { color: var(--muted); font-size: 0.88rem; margin-top: 0.3rem; }
+.auth-brand { margin-bottom: 1.2rem; }
+.auth-brand h1 { font-size: 1.35rem; color: var(--ink); line-height: 1.3; }
+.auth-brand .header-sub { color: var(--muted); font-size: 0.88rem; margin-top: 0.25rem; }
 
-.demo-hint {
-  margin-top: 1.2rem;
-  padding: 0.85rem 0.95rem;
+/* Auth Mode Switch (Sign in / Sign up) */
+.auth-mode-pills {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
   background: var(--page);
-  border: 1px solid var(--line);
+  padding: 0.28rem;
   border-radius: var(--r);
-  font-size: 0.78rem;
-  color: var(--muted);
-  line-height: 1.65;
+  border: 1.5px solid var(--line);
+  margin-bottom: 1.35rem;
+  box-sizing: border-box;
 }
-.demo-hint strong { color: var(--ink-soft); }
-.demo-hint code {
-  background: var(--wash); color: var(--mill);
-  padding: 0.06rem 0.38rem;
-  border-radius: 4px;
-  font-family: var(--mono-face);
-  font-weight: 600; font-size: 0.9em;
+.auth-mode-pill {
+  border: none;
+  background: transparent;
+  padding: 0.55rem 0.45rem;
+  font-family: var(--ui-face);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+  border-radius: calc(var(--r) - 2px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+.auth-mode-pill:hover {
+  color: var(--ink);
+}
+.auth-mode-pill.active {
+  background: var(--paper);
+  color: var(--mill);
+  font-weight: 700;
+  box-shadow: var(--sh-sm);
+}
+[data-theme="dark"] .auth-mode-pills {
+  background: #0E1713;
+  border-color: #213A2E;
+}
+[data-theme="dark"] .auth-mode-pill.active {
+  background: #172F22;
+  color: #46D38E;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+.auth-switch-prompt {
+  text-align: center;
+  margin-top: 1.25rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+.btn-link-auth {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--mill);
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.84rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.15s ease;
+}
+.btn-link-auth:hover {
+  color: var(--mill-hover);
+}
+[data-theme="dark"] .btn-link-auth {
+  color: #46D38E;
+}
+[data-theme="dark"] .btn-link-auth:hover {
+  color: #6EE7A8;
 }
 
 /* ============================================================
