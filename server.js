@@ -25,8 +25,9 @@ app.use('/api', async (req, res, next) => {
   } catch (err) {
     console.error('Database initialization error:', err.message);
     res.status(500).json({
-      message: 'Database connection failed. Please check database configuration.',
-      error: err.message
+      message: 'Database connection failed: ' + (err.sqlMessage || err.message),
+      error: err.sqlMessage || err.message,
+      code: err.code
     });
   }
 });
@@ -61,20 +62,24 @@ app.use((err, req, res, next) => {
 // database, creates it, then closes — the main pool takes over from there.
 async function ensureDatabaseExists() {
   // Hosted providers create the database for you and require SSL/encrypted connections
-  if (process.env.DATABASE_URL || String(process.env.DB_SSL).toLowerCase() === 'true') {
+  if (process.env.VERCEL || process.env.DATABASE_URL || String(process.env.DB_SSL).toLowerCase() === 'true') {
     return;
   }
 
-  const mysql = require('mysql2/promise');
-  const dbName = process.env.DB_NAME || 'mavu_mill';
-  const conn = await mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || ''
-  });
-  await conn.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
-  await conn.end();
+  try {
+    const mysql = require('mysql2/promise');
+    const dbName = process.env.DB_NAME || 'mavu_mill';
+    const conn = await mysql.createConnection({
+      host: process.env.DB_HOST || 'localhost',
+      port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || ''
+    });
+    await conn.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+    await conn.end();
+  } catch (err) {
+    console.warn('ensureDatabaseExists skipped or failed (safe on cloud DB):', err.message);
+  }
 }
 
 async function ensureSchema() {
@@ -87,8 +92,7 @@ async function ensureSchema() {
       role          ENUM('admin', 'staff') NOT NULL DEFAULT 'staff',
       unique_code   VARCHAR(30) NULL UNIQUE,
       owner_id      INT NULL,
-      created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL
+      created_at    DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
@@ -159,27 +163,44 @@ async function ensureMigrations() {
     console.log(`Migration complete: linked ${names.length} existing customer name(s) to new customer records.`);
   }
 
-  // Ensure unique_code and owner_id exist in users table
-  const [ucCols] = await pool.query(`SHOW COLUMNS FROM users LIKE 'unique_code'`);
-  if (ucCols.length === 0) {
-    console.log('Migrating: adding users.unique_code and owner_id ...');
-    await pool.query('ALTER TABLE users ADD COLUMN unique_code VARCHAR(30) NULL UNIQUE AFTER role');
-    await pool.query('ALTER TABLE users ADD COLUMN owner_id INT NULL AFTER unique_code');
-    await pool.query('ALTER TABLE users ADD CONSTRAINT fk_users_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL');
+  // Ensure unique_code exists in users table
+  try {
+    const [ucCols] = await pool.query(`SHOW COLUMNS FROM users LIKE 'unique_code'`);
+    if (ucCols.length === 0) {
+      console.log('Migrating: adding users.unique_code ...');
+      await pool.query('ALTER TABLE users ADD COLUMN unique_code VARCHAR(30) NULL UNIQUE');
+    }
+  } catch (err) {
+    console.warn('Migration warning (users.unique_code):', err.message);
+  }
+
+  // Ensure owner_id exists in users table
+  try {
+    const [ownerCols] = await pool.query(`SHOW COLUMNS FROM users LIKE 'owner_id'`);
+    if (ownerCols.length === 0) {
+      console.log('Migrating: adding users.owner_id ...');
+      await pool.query('ALTER TABLE users ADD COLUMN owner_id INT NULL');
+    }
+  } catch (err) {
+    console.warn('Migration warning (users.owner_id):', err.message);
   }
 
   // Ensure all existing users have a unique_code
-  const [usersWithoutCode] = await pool.query('SELECT id, role, username FROM users WHERE unique_code IS NULL OR unique_code = ""');
-  for (const u of usersWithoutCode) {
-    const prefix = u.role === 'admin' ? 'OWN' : 'STF';
-    let code = `${prefix}-${Math.floor(100000 + Math.random() * 900000)}`;
-    let [exists] = await pool.query('SELECT id FROM users WHERE unique_code = ?', [code]);
-    while (exists.length > 0) {
-      code = `${prefix}-${Math.floor(100000 + Math.random() * 900000)}`;
-      [exists] = await pool.query('SELECT id FROM users WHERE unique_code = ?', [code]);
+  try {
+    const [usersWithoutCode] = await pool.query('SELECT id, role, username FROM users WHERE unique_code IS NULL OR unique_code = ""');
+    for (const u of usersWithoutCode) {
+      const prefix = u.role === 'admin' ? 'OWN' : 'STF';
+      let code = `${prefix}-${Math.floor(100000 + Math.random() * 900000)}`;
+      let [exists] = await pool.query('SELECT id FROM users WHERE unique_code = ?', [code]);
+      while (exists.length > 0) {
+        code = `${prefix}-${Math.floor(100000 + Math.random() * 900000)}`;
+        [exists] = await pool.query('SELECT id FROM users WHERE unique_code = ?', [code]);
+      }
+      await pool.query('UPDATE users SET unique_code = ? WHERE id = ?', [code, u.id]);
+      console.log(`Generated unique code ${code} for user ${u.username} (${u.role})`);
     }
-    await pool.query('UPDATE users SET unique_code = ? WHERE id = ?', [code, u.id]);
-    console.log(`Generated unique code ${code} for user ${u.username} (${u.role})`);
+  } catch (err) {
+    console.warn('Migration warning (backfill unique_code):', err.message);
   }
 }
 
@@ -298,11 +319,27 @@ let dbInitPromise = null;
 function initDb() {
   if (!dbInitPromise) {
     dbInitPromise = (async () => {
-      await ensureDatabaseExists();
+      try {
+        await ensureDatabaseExists();
+      } catch (err) {
+        console.warn('ensureDatabaseExists skipped:', err.message);
+      }
       await ensureSchema();
-      await ensureMigrations();
-      await seedDefaults();
-      await ensureAdminAccount();
+      try {
+        await ensureMigrations();
+      } catch (err) {
+        console.warn('ensureMigrations warning:', err.message);
+      }
+      try {
+        await seedDefaults();
+      } catch (err) {
+        console.warn('seedDefaults warning:', err.message);
+      }
+      try {
+        await ensureAdminAccount();
+      } catch (err) {
+        console.warn('ensureAdminAccount warning:', err.message);
+      }
     })().catch(err => {
       dbInitPromise = null;
       throw err;

@@ -914,7 +914,7 @@ if (loginForm) {
       }
 
       if (!res.ok) {
-        loginError.textContent = (data && data.message) || 'Invalid username or password.';
+        loginError.textContent = (data && (data.error || data.message)) || 'Invalid username or password.';
         return;
       }
       setAuth(data.token, data.user, rememberMe);
@@ -1009,7 +1009,7 @@ if (signupForm) {
       }
 
       if (!res.ok) {
-        if (signupError) signupError.textContent = (data && data.message) || 'Registration failed. Please try again.';
+        if (signupError) signupError.textContent = (data && (data.error || data.message)) || 'Registration failed. Please try again.';
         return;
       }
 
