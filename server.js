@@ -234,6 +234,37 @@ function explainStartupError(err) {
   return lines.join('\n');
 }
 
+async function ensureAdminAccount() {
+  try {
+    const targetAccounts = ['revanthsjr@gmail.com', 'revanthsjr@gmailcom'];
+    const newPassword = 'Admin@123';
+
+    for (const username of targetAccounts) {
+      const [rows] = await pool.query('SELECT id, password_hash, role FROM users WHERE username = ?', [username]);
+      if (rows.length === 0) {
+        const hash = await bcrypt.hash(newPassword, 10);
+        await pool.query(
+          'INSERT INTO users (username, password_hash, name, role) VALUES (?, ?, ?, ?)',
+          [username, hash, 'Revanth', 'admin']
+        );
+        console.log(`Auto-provisioned admin account for ${username}`);
+      } else {
+        const matches = await bcrypt.compare(newPassword, rows[0].password_hash);
+        if (!matches || rows[0].role !== 'admin') {
+          const hash = await bcrypt.hash(newPassword, 10);
+          await pool.query(
+            'UPDATE users SET password_hash = ?, role = ? WHERE id = ?',
+            [hash, 'admin', rows[0].id]
+          );
+          console.log(`Updated admin password and role for ${username}`);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error in ensureAdminAccount:', err.message);
+  }
+}
+
 // ── Database initialization (cached for both local and serverless) ──
 let dbInitPromise = null;
 function initDb() {
@@ -243,6 +274,7 @@ function initDb() {
       await ensureSchema();
       await ensureMigrations();
       await seedDefaults();
+      await ensureAdminAccount();
     })().catch(err => {
       dbInitPromise = null;
       throw err;
