@@ -1341,3 +1341,30 @@ if (btnCustomGoogle) {
   }
 })();
 
+// ── Global Service Tasks Counter for Sidebar ───────────────────
+async function updateSidebarTaskBadge() {
+  const badge = document.getElementById('navTaskBadge');
+  if (!badge || !getToken()) return;
+  try {
+    const data = await apiFetch('/tasks/counts');
+    if (data && data.totalActive > 0) {
+      badge.textContent = data.totalActive;
+      badge.style.display = 'inline-block';
+      if (data.overdue > 0) {
+        badge.classList.add('badge-has-overdue');
+      } else {
+        badge.classList.remove('badge-has-overdue');
+      }
+    } else {
+      badge.style.display = 'none';
+    }
+  } catch (e) {
+    // ignore background errors
+  }
+}
+
+if (getToken()) {
+  setTimeout(updateSidebarTaskBadge, 600);
+  setInterval(updateSidebarTaskBadge, 30000);
+}
+

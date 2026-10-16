@@ -41,6 +41,16 @@ const rateStatus                = document.getElementById('rateStatus');
 const formMessage               = document.getElementById('formMessage');
 const trackCustomerCheck        = document.getElementById('trackCustomer');
 const generateBtn               = document.getElementById('generateReceiptBtn');
+const saveTaskBtn               = document.getElementById('saveTaskBtn');
+const serviceTaskBox            = document.getElementById('serviceTaskBox');
+const taskTokenNoInput          = document.getElementById('taskTokenNo');
+const btnNextToken              = document.getElementById('btnNextToken');
+const taskReadyByInput          = document.getElementById('taskReadyByInput');
+const taskNotesInput            = document.getElementById('taskNotesInput');
+const intakeSlipModal           = document.getElementById('intakeSlipModal');
+const btnCloseIntakeModal       = document.getElementById('btnCloseIntakeModal');
+const btnDismissIntakeModal     = document.getElementById('btnDismissIntakeModal');
+const btnPrintIntakeSlip        = document.getElementById('btnPrintIntakeSlip');
 
 let ALL_PRODUCTS        = [];
 let currentDefaultRate  = 0;
@@ -122,12 +132,63 @@ function updateCalc() {
   updateRateStatus();
 }
 
+function setReadyByPreset(mins, timeType) {
+  const d = new Date();
+  if (timeType === 'today-evening') {
+    d.setHours(17, 0, 0, 0);
+    if (d <= new Date()) d.setDate(d.getDate() + 1);
+  } else if (timeType === 'tomorrow-morning') {
+    d.setDate(d.getDate() + 1);
+    d.setHours(10, 0, 0, 0);
+  } else if (mins) {
+    d.setTime(d.getTime() + mins * 60000);
+  }
+  const yyyy = d.getFullYear();
+  const MM = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  if (taskReadyByInput) {
+    taskReadyByInput.value = `${yyyy}-${MM}-${dd}T${hh}:${mm}`;
+  }
+}
+
+async function loadNextToken() {
+  try {
+    const data = await apiFetch('/tasks/next-token');
+    if (taskTokenNoInput && (!taskTokenNoInput.value || taskTokenNoInput.value.startsWith('Bag #'))) {
+      taskTokenNoInput.value = data.tokenNo || `Bag #${data.nextNumber || 1}`;
+    }
+  } catch (e) {
+    if (taskTokenNoInput && !taskTokenNoInput.value) {
+      taskTokenNoInput.value = 'Bag #1';
+    }
+  }
+}
+
 function handleProductChange() {
   const product = getSelectedProduct();
-  if (!product) { rateInput.value = ''; updateCalc(); return; }
+  if (!product) {
+    rateInput.value = '';
+    if (serviceTaskBox) serviceTaskBox.style.display = 'none';
+    if (saveTaskBtn) saveTaskBtn.style.display = 'none';
+    updateCalc();
+    return;
+  }
   currentDefaultRate = product.rate;
   rateInput.value = product.rate;
   unitDisplay.value = product.unit;
+
+  if (product.category === 'service') {
+    if (serviceTaskBox) serviceTaskBox.style.display = 'block';
+    if (saveTaskBtn) saveTaskBtn.style.display = 'inline-flex';
+    if (taskReadyByInput && !taskReadyByInput.value) setReadyByPreset(60);
+    if (taskTokenNoInput && !taskTokenNoInput.value) loadNextToken();
+  } else {
+    if (serviceTaskBox) serviceTaskBox.style.display = 'none';
+    if (saveTaskBtn) saveTaskBtn.style.display = 'none';
+  }
+
   updateCalc();
 }
 
@@ -221,6 +282,10 @@ function resetForm() {
     newCustomerDuplicateHint.textContent = '';
     newCustomerDuplicateHint.style.display = 'none';
   }
+  if (taskTokenNoInput) taskTokenNoInput.value = '';
+  if (taskNotesInput) taskNotesInput.value = '';
+  if (serviceTaskBox) serviceTaskBox.style.display = 'none';
+  if (saveTaskBtn) saveTaskBtn.style.display = 'none';
   hideSuggestions();
 }
 
@@ -256,6 +321,100 @@ async function generateReceipt() {
 async function printReceipt() {
   if (!lastGeneratedOrder) { if (!(await generateReceipt())) return; }
   window.print();
+}
+
+// ── Save as Service Task & Reminder ───────────────────────────
+async function saveServiceTask() {
+  const order = getOrderData();
+  if (order.error) {
+    formMessage.style.color = 'var(--red)';
+    formMessage.textContent = order.error;
+    return false;
+  }
+  formMessage.textContent = '';
+
+  const tokenNo = taskTokenNoInput ? taskTokenNoInput.value.trim() : '';
+  const readyBy = taskReadyByInput ? taskReadyByInput.value : '';
+  const notes   = taskNotesInput ? taskNotesInput.value.trim() : '';
+
+  if (saveTaskBtn) {
+    saveTaskBtn.disabled = true;
+    saveTaskBtn.textContent = 'Saving...';
+  }
+
+  try {
+    const payload = {
+      customerName: order.name,
+      phone: order.phone,
+      product: order.product,
+      unit: order.unit,
+      quantity: order.quantity,
+      rate: order.rate,
+      total: order.total,
+      customRate: order.customRate,
+      tokenNo,
+      readyBy: readyBy ? new Date(readyBy).toISOString() : new Date(Date.now() + 3600000).toISOString(),
+      notes
+    };
+
+    const res = await apiFetch('/tasks', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    const task = res.task;
+    showToast(`✓ Service task ${task.tokenNo} added to reminder queue!`);
+
+    // Open Intake Slip Modal
+    openIntakeSlipModal(task);
+    resetForm();
+    return true;
+  } catch (e) {
+    formMessage.style.color = 'var(--red)';
+    formMessage.textContent = 'Could not save service task: ' + e.message;
+    return false;
+  } finally {
+    if (saveTaskBtn) {
+      saveTaskBtn.disabled = false;
+      saveTaskBtn.innerHTML = `
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Save as Task / நினைவூட்டல்
+      `;
+    }
+  }
+}
+
+function openIntakeSlipModal(task) {
+  if (!task) return;
+  document.getElementById('intakeSlipTokenNo').textContent = task.tokenNo || `Bag #${task.id}`;
+  document.getElementById('intakeSlipCustomer').textContent = task.customerName || '-';
+
+  const phoneRow = document.getElementById('intakeSlipPhoneRow');
+  if (task.phone) {
+    phoneRow.style.display = '';
+    document.getElementById('intakeSlipPhone').textContent = task.phone;
+  } else {
+    phoneRow.style.display = 'none';
+  }
+
+  document.getElementById('intakeSlipProduct').textContent = task.productName || '-';
+  document.getElementById('intakeSlipQuantity').textContent = `${task.quantity} ${task.unit} (@ ${fmt(task.rate)})`;
+  document.getElementById('intakeSlipTotal').textContent = fmt(task.total);
+  document.getElementById('intakeSlipReadyBy').textContent = fmtDate(task.readyBy);
+
+  const notesRow = document.getElementById('intakeSlipNotesRow');
+  if (task.notes) {
+    notesRow.style.display = '';
+    document.getElementById('intakeSlipNotes').textContent = task.notes;
+  } else {
+    notesRow.style.display = 'none';
+  }
+
+  if (intakeSlipModal) intakeSlipModal.style.display = 'flex';
+}
+
+function closeIntakeSlipModal() {
+  if (intakeSlipModal) intakeSlipModal.style.display = 'none';
 }
 
 // ── Update track-customer label dynamically ───────────────────
@@ -564,6 +723,24 @@ if (newCustNameInput) {
 if (newCustPhoneInput) {
   newCustPhoneInput.addEventListener('input', handleNewPhoneInput);
 }
+
+// Service Task & Reminder Listeners
+if (saveTaskBtn) saveTaskBtn.addEventListener('click', saveServiceTask);
+if (btnNextToken) btnNextToken.addEventListener('click', loadNextToken);
+if (btnCloseIntakeModal) btnCloseIntakeModal.addEventListener('click', closeIntakeSlipModal);
+if (btnDismissIntakeModal) btnDismissIntakeModal.addEventListener('click', closeIntakeSlipModal);
+if (btnPrintIntakeSlip) btnPrintIntakeSlip.addEventListener('click', () => window.print());
+
+// Quick Preset chips
+document.querySelectorAll('.preset-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    const mins = chip.dataset.mins ? Number(chip.dataset.mins) : null;
+    const timeType = chip.dataset.time || null;
+    setReadyByPreset(mins, timeType);
+  });
+});
 
 // ── Init ──────────────────────────────────────────────────────
 (async function () {

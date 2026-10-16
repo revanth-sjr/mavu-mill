@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>சக்தி எண்ணெய் மற்றும் மாவு ஆலை — Tasks & Reminders</title>
+  <script>
+    (function () {
+      var t = localStorage.getItem('mavu_theme');
+      if (t === 'dark' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+      var params = new URLSearchParams(window.location.search);
+      var code = params.get('code');
+      if (!localStorage.getItem('mavu_token')) {
+        if (code) {
+          window.location.replace('login.html?code=' + encodeURIComponent(code));
+        } else {
+          window.location.replace('login.html');
+        }
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="app">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">ச</div>
+        <div class="brand-text">
+          <div class="brand-name">சக்தி ஆலை</div>
+          <div class="brand-sub">Oil &amp; Flour Mill</div>
+        </div>
+      </div>
+
+      <p class="nav-label">Workspace</p>
+      <nav class="nav" aria-label="Primary">
+        <a class="nav-link" href="index.html">
+          <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2V2z"/><path d="M9 8h6M9 12h6"/></svg>
+          <span>Billing</span>
+        </a>
+        <a class="nav-link active" href="tasks.html">
+          <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          <span>Tasks</span>
+          <span class="nav-badge" id="navTaskBadge" style="display:none">0</span>
+        </a>
+        <a class="nav-link" href="dashboard.html">
+          <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h6V3H3zM15 21h6V11h-6zM3 21h6v-5H3zM15 7h6V3h-6z"/></svg>
+          <span>Dashboard</span>
+        </a>
+        <a class="nav-link" href="products.html" data-role-only="admin">
+          <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 12l9 5 9-5M3 16l9 5 9-5"/></svg>
+          <span>Products</span>
+        </a>
+        <button type="button" class="nav-link nav-btn" id="sidebarSettingsBtn">
+          <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>Settings</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <p class="sidebar-note">Sakthi Mill<br>Service Work Orders</p>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-col">
+      <header class="topbar">
+        <div class="topbar-title">
+          <span class="eyebrow">Service Queue</span>
+          <h1>Tasks &amp; Reminders <span style="font-size:1.05rem;font-weight:500;color:var(--muted)">/ அரைவை பணிகள்</span></h1>
+        </div>
+        <div class="topbar-meta">
+          <span class="last-updated" id="taskLastRefreshed"></span>
+          <span class="user-chip" id="userChip"></span>
+        </div>
+      </header>
+
+      <main id="main-content" class="page-shell">
+        <!-- INTRO BAR -->
+        <div class="intro-bar print-hide">
+          <div>
+            <h2>Service Reminders &amp; Delivery / அரைவை பணி நிர்வாகம்</h2>
+            <p>Monitor grain milling times, mark jobs completed when ready, and generate bills when customers arrive.</p>
+          </div>
+          <div class="intro-badges">
+            <a href="index.html" class="btn btn-primary" style="padding:0.45rem 0.9rem;font-size:0.85rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+              <span>+ New Service Intake / புதிய அரைவை</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- STAT METRICS CARDS -->
+        <div class="task-stats-grid print-hide">
+          <div class="task-stat-card card">
+            <div class="task-stat-icon yellow">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="task-stat-content">
+              <span class="task-stat-label">In Progress / பணியில் உள்ளவை</span>
+              <div class="task-stat-val" id="statPendingCount">0</div>
+              <span class="task-stat-sub">Waiting for milling completion</span>
+            </div>
+          </div>
+
+          <div class="task-stat-card card">
+            <div class="task-stat-icon green">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div class="task-stat-content">
+              <span class="task-stat-label">Ready for Pickup / தயார்</span>
+              <div class="task-stat-val" id="statCompletedCount">0</div>
+              <span class="task-stat-sub">Awaiting customer arrival</span>
+            </div>
+          </div>
+
+          <div class="task-stat-card card">
+            <div class="task-stat-icon red">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div class="task-stat-content">
+              <span class="task-stat-label">Overdue / நேரம் கடந்தவை</span>
+              <div class="task-stat-val" id="statOverdueCount">0</div>
+              <span class="task-stat-sub">Past estimated ready time</span>
+            </div>
+          </div>
+
+          <div class="task-stat-card card">
+            <div class="task-stat-icon blue">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div class="task-stat-content">
+              <span class="task-stat-label">Billed Today / இன்று முடித்தவை</span>
+              <div class="task-stat-val" id="statBilledTodayCount">0</div>
+              <span class="task-stat-sub">Delivered &amp; receipts issued</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- FILTER TABS & SEARCH TOOLBAR -->
+        <div class="task-toolbar card print-hide">
+          <div class="task-tabs" role="tablist">
+            <button type="button" class="task-tab active" data-filter="active">
+              <span>Active Jobs / தற்போதைய பணிகள்</span>
+              <span class="task-tab-count" id="tabActiveCount">0</span>
+            </button>
+            <button type="button" class="task-tab" data-filter="pending">
+              <span>In Progress / பணியில்</span>
+              <span class="task-tab-count" id="tabPendingCount">0</span>
+            </button>
+            <button type="button" class="task-tab" data-filter="completed">
+              <span>Ready for Pickup / தயார்</span>
+              <span class="task-tab-count" id="tabCompletedCount">0</span>
+            </button>
+            <button type="button" class="task-tab" data-filter="billed">
+              <span>Billed / முடிக்கப்பட்டவை</span>
+            </button>
+            <button type="button" class="task-tab" data-filter="all">
+              <span>All History / அனைத்தும்</span>
+            </button>
+          </div>
+
+          <div class="task-search-wrap">
+            <svg class="task-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="taskSearchInput" placeholder="Search by Bag #, Customer Name, Phone, Product...">
+            <button type="button" id="btnRefreshTasks" class="btn-task-refresh" title="Refresh task list">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- TASKS LIST / GRID CONTAINER -->
+        <div id="tasksListContainer" class="tasks-grid">
+          <!-- Dynamically populated via tasks.js -->
+          <div class="task-empty-state card">
+            <div class="spinner" style="margin:2rem auto;"></div>
+            <p style="text-align:center;color:var(--muted);">Loading service tasks...</p>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- PRINTABLE BAG TOKEN SLIP MODAL -->
+  <div id="tokenSlipModal" class="modal-overlay" role="dialog" aria-modal="true" style="display:none;">
+    <div class="modal-card token-slip-modal-card">
+      <div class="modal-head">
+        <div>
+          <h3>Bag Intake Token / அரைவை பை டோக்கன்</h3>
+          <p class="modal-sub">Attach to grain bag or give to customer</p>
+        </div>
+        <button type="button" class="btn-close-modal" id="btnCloseTokenModal">&times;</button>
+      </div>
+
+      <div class="token-slip-print-area" id="tokenSlipPrintArea">
+        <div class="slip-header">
+          <h2>சக்தி எண்ணெய் மற்றும் மாவு ஆலை</h2>
+          <p>Service Drop-off Token &middot; அரைவை டோக்கன்</p>
+        </div>
+        <div class="slip-token-badge" id="slipTokenNo">Bag #1</div>
+        <div class="slip-body">
+          <div class="slip-row"><span>Customer:</span><strong id="slipCustomer">-</strong></div>
+          <div class="slip-row" id="slipPhoneRow"><span>Phone:</span><strong id="slipPhone">-</strong></div>
+          <div class="slip-row"><span>Service:</span><strong id="slipProduct">-</strong></div>
+          <div class="slip-row"><span>Quantity:</span><strong id="slipQuantity">-</strong></div>
+          <div class="slip-row"><span>Est. Total:</span><strong id="slipTotal">-</strong></div>
+          <div class="slip-row highlight"><span>Ready By / நேரம்:</span><strong id="slipReadyBy">-</strong></div>
+          <div class="slip-row" id="slipNotesRow" style="display:none;"><span>Notes:</span><span id="slipNotes">-</span></div>
+        </div>
+        <p class="slip-foot">Please present this token or phone number when collecting your flour/oil. நன்றி!</p>
+      </div>
+
+      <div class="modal-actions" style="margin-top:1.2rem;display:flex;justify-content:flex-end;gap:0.6rem;">
+        <button type="button" class="btn btn-secondary" id="btnCancelTokenModal">Close</button>
+        <button type="button" class="btn btn-primary" id="btnPrintTokenSlip">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Print Slip
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BILL RECEIPT MODAL (UPON CUSTOMER ARRIVAL / BILL GENERATION) -->
+  <div id="billedReceiptModal" class="modal-overlay" role="dialog" aria-modal="true" style="display:none;">
+    <div class="modal-card" style="max-width:440px;">
+      <div class="modal-head">
+        <div>
+          <h3>Bill Generated &middot; பில் தயார்</h3>
+          <p class="modal-sub">Receipt saved to orders ledger</p>
+        </div>
+        <button type="button" class="btn-close-modal" id="btnCloseBilledModal">&times;</button>
+      </div>
+
+      <div class="receipt-panel" id="taskReceiptPanel">
+        <div class="receipt-header">
+          <h2>சக்தி எண்ணெய் மற்றும் மாவு ஆலை</h2>
+          <p>Receipt <span class="ta">&middot; ரசீது</span></p>
+        </div>
+        <div class="receipt-body">
+          <div class="receipt-row"><span>Date &amp; time</span><strong id="taskBillDate">-</strong></div>
+          <div class="receipt-row"><span>Customer</span><strong id="taskBillCustomer">-</strong></div>
+          <div class="receipt-row" id="taskBillPhoneRow" style="display:none"><span>Phone</span><strong id="taskBillPhone">-</strong></div>
+          <div class="receipt-row"><span>Product</span><strong id="taskBillProduct">-</strong></div>
+          <div class="receipt-row"><span>Quantity</span><strong id="taskBillQuantity">-</strong></div>
+          <div class="receipt-row"><span>Rate</span><strong id="taskBillRate">-</strong></div>
+          <div class="receipt-row receipt-total"><span>Total / மொத்தம்</span><strong id="taskBillTotal">-</strong></div>
+        </div>
+        <p class="receipt-note"><span class="ta">நன்றி</span> &middot; Thank you</p>
+      </div>
+
+      <div class="modal-actions" style="margin-top:1.2rem;display:flex;justify-content:flex-end;gap:0.6rem;">
+        <button type="button" class="btn btn-secondary" id="btnDismissBilledModal">Done</button>
+        <button type="button" class="btn btn-primary" id="btnPrintBilledReceipt">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Print Receipt
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="auth.js" defer></script>
+  <script src="tasks.js" defer></script>
+</body>
+</html>

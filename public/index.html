@@ -41,6 +41,7 @@
       <p class="nav-label">Workspace</p>
       <nav class="nav" aria-label="Primary">
         <a class="nav-link active" href="index.html"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2V2z"/><path d="M9 8h6M9 12h6"/></svg><span>Billing</span></a>
+        <a class="nav-link" href="tasks.html"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Tasks</span><span class="nav-badge" id="navTaskBadge" style="display:none">0</span></a>
         <a class="nav-link" href="dashboard.html"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h6V3H3zM15 21h6V11h-6zM3 21h6v-5H3zM15 7h6V3h-6z"/></svg><span>Dashboard</span></a>
         <a class="nav-link" href="products.html" data-role-only="admin"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 12l9 5 9-5M3 16l9 5 9-5"/></svg><span>Products</span></a>
         <button type="button" class="nav-link nav-btn" id="sidebarSettingsBtn"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></button>
@@ -213,12 +214,58 @@
                 </div>
               </div>
 
+              <!-- SERVICE TASK / WORK ORDER INTAKE (SHOWN FOR SERVICE PRODUCTS) -->
+              <div id="serviceTaskBox" class="service-task-box" style="display:none;">
+                <div class="service-task-box-head">
+                  <div class="service-task-box-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>Service Task &amp; Reminder / அரைவை பணி நினைவூட்டல்</span>
+                  </div>
+                  <span class="service-chip-pill">Drop-off / பின்னர் பெற</span>
+                </div>
+
+                <div class="field-grid" style="margin-top:0.6rem;">
+                  <div class="field-group">
+                    <label for="taskTokenNo">Bag / Token # <span style="font-weight:400;color:var(--muted)">/ பை எண்</span></label>
+                    <div style="display:flex;gap:0.4rem;">
+                      <input id="taskTokenNo" type="text" placeholder="e.g. Bag #1">
+                      <button type="button" class="btn btn-secondary" id="btnNextToken" style="padding:0.4rem 0.6rem;font-size:0.75rem;" title="Auto-assign next token">Auto</button>
+                    </div>
+                  </div>
+
+                  <div class="field-group">
+                    <label for="taskReadyByInput">Ready By / தயாராகும் நேரம்</label>
+                    <input id="taskReadyByInput" type="datetime-local">
+                  </div>
+                </div>
+
+                <div class="task-preset-chips-wrap">
+                  <span class="preset-label">Quick Presets / விரைவு நேரம்:</span>
+                  <div class="preset-chips">
+                    <button type="button" class="preset-chip" data-mins="30">+30 mins</button>
+                    <button type="button" class="preset-chip active" data-mins="60">+1 hr</button>
+                    <button type="button" class="preset-chip" data-mins="120">+2 hrs</button>
+                    <button type="button" class="preset-chip" data-time="today-evening">Today 5 PM</button>
+                    <button type="button" class="preset-chip" data-time="tomorrow-morning">Tomorrow 10 AM</button>
+                  </div>
+                </div>
+
+                <div class="field-group" style="margin-top:0.5rem;margin-bottom:0.2rem;">
+                  <label for="taskNotesInput">Instructions / குறிப்புகள் <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+                  <input id="taskNotesInput" type="text" placeholder="e.g. நைசாக அரைக்கவும் / fine grinding">
+                </div>
+              </div>
+
               <label class="track-toggle" for="trackCustomer">
                 <input type="checkbox" id="trackCustomer" checked>
                 <span id="trackLabel">Track customer (data will be saved to dashboard)</span>
               </label>
 
               <div class="action-row" style="margin-top:0.9rem">
+                <button type="button" class="btn btn-success" id="saveTaskBtn" style="display:none;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Save as Task / நினைவூட்டல்
+                </button>
                 <button type="button" class="btn btn-primary" id="generateReceiptBtn">Generate receipt</button>
                 <button type="button" class="btn btn-secondary" id="printReceiptBtn">Print / PDF</button>
               </div>
@@ -251,6 +298,48 @@
 
         </div>
       </main>
+    </div>
+  </div>
+
+  <!-- PRINTABLE BAG INTAKE TOKEN SLIP MODAL -->
+  <div id="intakeSlipModal" class="modal-overlay" role="dialog" aria-modal="true" style="display:none;">
+    <div class="modal-card token-slip-modal-card">
+      <div class="modal-head">
+        <div>
+          <h3>Bag Intake Token / அரைவை பை டோக்கன்</h3>
+          <p class="modal-sub">Task saved! Attach to grain bag or give to customer</p>
+        </div>
+        <button type="button" class="btn-close-modal" id="btnCloseIntakeModal">&times;</button>
+      </div>
+
+      <div class="token-slip-print-area" id="intakeSlipPrintArea">
+        <div class="slip-header">
+          <h2>சக்தி எண்ணெய் மற்றும் மாவு ஆலை</h2>
+          <p>Service Drop-off Token &middot; அரைவை டோக்கன்</p>
+        </div>
+        <div class="slip-token-badge" id="intakeSlipTokenNo">Bag #1</div>
+        <div class="slip-body">
+          <div class="slip-row"><span>Customer:</span><strong id="intakeSlipCustomer">-</strong></div>
+          <div class="slip-row" id="intakeSlipPhoneRow"><span>Phone:</span><strong id="intakeSlipPhone">-</strong></div>
+          <div class="slip-row"><span>Service:</span><strong id="intakeSlipProduct">-</strong></div>
+          <div class="slip-row"><span>Quantity:</span><strong id="intakeSlipQuantity">-</strong></div>
+          <div class="slip-row"><span>Est. Total:</span><strong id="intakeSlipTotal">-</strong></div>
+          <div class="slip-row highlight"><span>Ready By / நேரம்:</span><strong id="intakeSlipReadyBy">-</strong></div>
+          <div class="slip-row" id="intakeSlipNotesRow" style="display:none;"><span>Notes:</span><span id="intakeSlipNotes">-</span></div>
+        </div>
+        <p class="slip-foot">Please present this token when collecting your flour/oil. நன்றி!</p>
+      </div>
+
+      <div class="modal-actions" style="margin-top:1.2rem;display:flex;justify-content:space-between;align-items:center;">
+        <a href="tasks.html" class="btn btn-secondary" style="text-decoration:none;font-size:0.85rem;">View in Tasks / பணிகள் பக்கம்</a>
+        <div style="display:flex;gap:0.5rem;">
+          <button type="button" class="btn btn-secondary" id="btnDismissIntakeModal">Done</button>
+          <button type="button" class="btn btn-primary" id="btnPrintIntakeSlip">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Print Slip
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

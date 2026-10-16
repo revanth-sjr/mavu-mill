@@ -10,6 +10,7 @@ const authRoutes = require('./routes/auth.routes');
 const productsRoutes = require('./routes/products.routes');
 const ordersRoutes = require('./routes/orders.routes');
 const customersRoutes = require('./routes/customers.routes');
+const tasksRoutes = require('./routes/tasks.routes');
 
 const app = express();
 app.use(cors());
@@ -36,6 +37,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/customers', customersRoutes);
+app.use('/api/tasks', tasksRoutes);
 
 // Serve the frontend from this same server (same origin — no CORS issues).
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -137,6 +139,35 @@ async function ensureSchema() {
       order_date    DATETIME NOT NULL,
       FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
       FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS service_tasks (
+      id             INT AUTO_INCREMENT PRIMARY KEY,
+      token_no       VARCHAR(50)  NULL,
+      customer_name  VARCHAR(150) NOT NULL,
+      customer_id    INT NULL,
+      customer_phone VARCHAR(20) NULL,
+      product_id     INT NULL,
+      product_name   VARCHAR(150) NOT NULL,
+      unit           VARCHAR(20)  NOT NULL,
+      quantity       DECIMAL(10,2) NOT NULL,
+      rate           DECIMAL(10,2) NOT NULL,
+      total          DECIMAL(10,2) NOT NULL,
+      custom_rate    TINYINT(1) NOT NULL DEFAULT 0,
+      ready_by       DATETIME NOT NULL,
+      status         ENUM('pending', 'completed', 'billed', 'cancelled') NOT NULL DEFAULT 'pending',
+      notes          VARCHAR(255) NULL,
+      order_id       INT NULL,
+      created_by     INT NULL,
+      created_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
+      completed_at   DATETIME NULL,
+      billed_at      DATETIME NULL,
+      FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
+      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL,
       FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
     )
   `);

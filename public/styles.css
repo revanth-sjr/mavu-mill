@@ -2234,3 +2234,630 @@ select option {
   border-color: rgba(46, 125, 50, 0.28);
 }
 
+/* ============================================================
+   SERVICE TASKS & REMINDERS STYLES
+   ============================================================ */
+
+/* 1. Sidebar Nav Badge */
+.nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sprout);
+  color: #fff;
+  font-family: var(--mono-face);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  margin-left: auto;
+  min-width: 18px;
+  height: 18px;
+  line-height: 1;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.nav-badge.badge-has-overdue {
+  background: var(--clay);
+  animation: pulseBadge 2s infinite ease-in-out;
+}
+@keyframes pulseBadge {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); box-shadow: 0 0 8px rgba(168, 65, 44, 0.45); }
+}
+
+/* 2. Service Task Box inside Billing Form */
+.service-task-box {
+  background: var(--wash);
+  border: 1.5px solid var(--wash-deep);
+  border-radius: var(--r);
+  padding: 0.95rem 1rem;
+  margin-top: 0.85rem;
+  margin-bottom: 0.85rem;
+  animation: fadeInDown 0.25s ease;
+}
+[data-theme="dark"] .service-task-box {
+  background: rgba(43, 168, 109, 0.08);
+  border-color: rgba(43, 168, 109, 0.25);
+}
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.service-task-box-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.service-task-box-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--mill);
+}
+.service-chip-pill {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: var(--wash-deep);
+  color: var(--forest);
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+}
+[data-theme="dark"] .service-chip-pill {
+  background: rgba(43, 168, 109, 0.2);
+  color: var(--sprout);
+}
+
+/* Quick presets */
+.task-preset-chips-wrap {
+  margin-top: 0.55rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.preset-label {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.preset-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.preset-chip {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.preset-chip:hover {
+  border-color: var(--mill);
+  color: var(--mill);
+}
+.preset-chip.active {
+  background: var(--mill);
+  border-color: var(--mill);
+  color: #fff;
+}
+
+/* 3. Tasks Page Stats Grid */
+.task-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.9rem;
+  margin-bottom: 1.2rem;
+}
+.task-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.95rem 1.15rem;
+}
+.task-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.task-stat-icon.yellow {
+  background: var(--amber-wash);
+  color: var(--amber);
+}
+.task-stat-icon.green {
+  background: var(--wash);
+  color: var(--mill);
+}
+.task-stat-icon.red {
+  background: var(--clay-wash);
+  color: var(--clay);
+}
+.task-stat-icon.blue {
+  background: var(--sky-wash);
+  color: var(--sky);
+}
+[data-theme="dark"] .task-stat-icon.yellow { background: rgba(229, 168, 59, 0.15); }
+[data-theme="dark"] .task-stat-icon.green  { background: rgba(43, 168, 109, 0.18); }
+[data-theme="dark"] .task-stat-icon.red    { background: rgba(168, 65, 44, 0.2); }
+[data-theme="dark"] .task-stat-icon.blue   { background: rgba(42, 111, 151, 0.2); }
+
+.task-stat-content {
+  display: flex;
+  flex-direction: column;
+}
+.task-stat-label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.task-stat-val {
+  font-family: var(--mono-face);
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.15;
+  margin-top: 0.1rem;
+}
+.task-stat-sub {
+  font-size: 0.68rem;
+  color: var(--faint);
+  margin-top: 0.15rem;
+}
+
+/* 4. Task Toolbar */
+.task-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.65rem 1rem;
+  margin-bottom: 1.2rem;
+}
+.task-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.task-tab {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  font-family: var(--ui-face);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.15s ease;
+}
+.task-tab:hover {
+  color: var(--ink);
+  background: var(--page);
+}
+.task-tab.active {
+  background: var(--wash);
+  color: var(--forest);
+  border-color: var(--wash-deep);
+}
+[data-theme="dark"] .task-tab.active {
+  background: rgba(43, 168, 109, 0.16);
+  color: var(--sprout);
+  border-color: rgba(43, 168, 109, 0.3);
+}
+.task-tab-count {
+  font-family: var(--mono-face);
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+}
+.task-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  max-width: 380px;
+}
+.task-search-icon {
+  position: absolute;
+  left: 0.65rem;
+  width: 14px;
+  height: 14px;
+  color: var(--faint);
+  pointer-events: none;
+}
+.task-search-wrap input {
+  width: 100%;
+  padding-left: 2rem;
+  font-size: 0.82rem;
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+}
+.btn-task-refresh {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  border-radius: var(--r-sm);
+  padding: 0.45rem 0.55rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-task-refresh:hover {
+  color: var(--mill);
+  border-color: var(--mill);
+}
+.btn-task-refresh.rotating svg {
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* 5. Tasks Grid */
+.tasks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.1rem;
+}
+.task-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.1rem;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--line);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+}
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sh-md);
+}
+.task-card.card-overdue {
+  border-color: rgba(168, 65, 44, 0.45);
+  background: linear-gradient(to bottom, var(--clay-wash), var(--paper) 15%);
+}
+[data-theme="dark"] .task-card.card-overdue {
+  background: linear-gradient(to bottom, rgba(168, 65, 44, 0.12), var(--paper) 25%);
+  border-color: rgba(168, 65, 44, 0.5);
+}
+.task-card.card-completed {
+  border-color: rgba(47, 158, 104, 0.4);
+  background: linear-gradient(to bottom, var(--wash), var(--paper) 15%);
+}
+[data-theme="dark"] .task-card.card-completed {
+  background: linear-gradient(to bottom, rgba(43, 168, 109, 0.12), var(--paper) 25%);
+  border-color: rgba(43, 168, 109, 0.5);
+}
+
+.task-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px dashed var(--line);
+}
+.task-token-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--mono-face);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--forest);
+  background: var(--wash-deep);
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--r-sm);
+}
+[data-theme="dark"] .task-token-tag {
+  background: rgba(43, 168, 109, 0.25);
+  color: var(--sprout);
+}
+.task-badge-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.badge-pending {
+  background: var(--page);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+.badge-warning {
+  background: var(--amber-wash);
+  color: var(--amber);
+  border: 1px solid rgba(169, 118, 27, 0.3);
+}
+.badge-urgent {
+  background: var(--clay-wash);
+  color: var(--clay);
+  border: 1px solid rgba(168, 65, 44, 0.4);
+  animation: pulseBadge 1.5s infinite;
+}
+.badge-overdue {
+  background: var(--clay);
+  color: #fff;
+  font-weight: 800;
+}
+.badge-completed {
+  background: var(--sprout);
+  color: #fff;
+  font-weight: 700;
+}
+.badge-billed {
+  background: var(--wash-deep);
+  color: var(--forest);
+  border: 1px solid var(--line);
+}
+
+.task-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.task-cust-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+.task-cust-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--mill);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.task-cust-info {
+  display: flex;
+  flex-direction: column;
+}
+.task-cust-name {
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+.task-cust-phone {
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+.task-cust-phone:hover {
+  color: var(--mill);
+  text-decoration: underline;
+}
+.task-cust-no-phone {
+  font-size: 0.74rem;
+  color: var(--faint);
+}
+
+.task-product-box {
+  background: var(--page);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-sm);
+  padding: 0.65rem 0.8rem;
+}
+.task-product-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+.task-product-total {
+  font-family: var(--mono-face);
+  color: var(--mill);
+  font-size: 1.05rem;
+}
+.task-product-meta {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 0.25rem;
+}
+.task-notes-callout {
+  font-size: 0.76rem;
+  color: var(--amber);
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+  border-top: 1px dashed var(--line);
+}
+
+.task-timing-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  font-size: 0.74rem;
+  background: var(--paper);
+  padding: 0.4rem 0.2rem;
+}
+.timing-item {
+  display: flex;
+  flex-direction: column;
+}
+.timing-label {
+  color: var(--faint);
+  font-size: 0.68rem;
+}
+.timing-val {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.task-card-footer {
+  margin-top: 0.9rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line-soft);
+}
+.task-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.task-btn-group .btn {
+  flex: 1;
+  font-size: 0.8rem;
+  padding: 0.48rem 0.65rem;
+  justify-content: center;
+}
+.btn-success {
+  background: var(--mill);
+  color: #fff;
+  border: 1px solid var(--mill);
+}
+.btn-success:hover {
+  background: var(--mill-hover);
+}
+.btn-generate-bill-now {
+  background: var(--sprout);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(47, 158, 104, 0.3);
+}
+.btn-generate-bill-now:hover {
+  background: #258656;
+}
+.btn-slip {
+  flex: 0 0 auto !important;
+  font-size: 0.76rem !important;
+  padding: 0.45rem 0.55rem !important;
+}
+.btn-task-cancel {
+  background: none;
+  border: 1px solid var(--line);
+  color: var(--faint);
+  border-radius: var(--r-sm);
+  padding: 0.35rem 0.55rem;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-task-cancel:hover {
+  color: var(--clay);
+  border-color: var(--clay);
+  background: var(--clay-wash);
+}
+
+/* 6. Printable Drop-off Token Slip */
+.token-slip-modal-card {
+  max-width: 380px;
+}
+.token-slip-print-area {
+  background: #fff;
+  color: #000;
+  border: 2px dashed #000;
+  border-radius: 4px;
+  padding: 1.1rem;
+  font-family: var(--ui-face);
+  text-align: center;
+}
+.slip-header h2 {
+  font-size: 1.05rem;
+  margin: 0;
+  font-weight: 800;
+}
+.slip-header p {
+  font-size: 0.75rem;
+  margin: 0.2rem 0 0.6rem 0;
+  color: #555;
+}
+.slip-token-badge {
+  display: inline-block;
+  background: #000;
+  color: #fff;
+  font-family: var(--mono-face);
+  font-size: 1.6rem;
+  font-weight: 800;
+  padding: 0.25rem 1rem;
+  border-radius: 4px;
+  margin-bottom: 0.8rem;
+  letter-spacing: 0.05em;
+}
+.slip-body {
+  border-top: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+  padding: 0.6rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  text-align: left;
+  font-size: 0.85rem;
+}
+.slip-row {
+  display: flex;
+  justify-content: space-between;
+}
+.slip-row span {
+  color: #666;
+}
+.slip-row strong {
+  font-weight: 700;
+}
+.slip-row.highlight {
+  background: #f5f5f5;
+  padding: 0.3rem 0.4rem;
+  border-radius: 3px;
+  margin-top: 0.2rem;
+}
+.slip-foot {
+  font-size: 0.7rem;
+  color: #666;
+  margin: 0.7rem 0 0 0;
+}
+
+/* Print Styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .token-slip-print-area,
+  .token-slip-print-area *,
+  #billedReceiptModal .receipt-panel,
+  #billedReceiptModal .receipt-panel *,
+  #intakeSlipModal .token-slip-print-area,
+  #intakeSlipModal .token-slip-print-area * {
+    visibility: visible;
+  }
+  .token-slip-print-area,
+  #billedReceiptModal .receipt-panel,
+  #intakeSlipModal .token-slip-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    margin: 0;
+    border: none;
+    box-shadow: none;
+  }
+}
+
+
