@@ -84,7 +84,7 @@ async function loadTasks(silent = false) {
       refreshBtn.classList.add('rotating');
     }
 
-    // Parallel fetch counts & task items for speed & responsiveness
+    // Build URL for tasks list
     let url = `/tasks?status=${currentFilter}`;
     if (currentCategory && currentCategory !== 'all') {
       url += `&category=${currentCategory}`;
@@ -93,17 +93,18 @@ async function loadTasks(silent = false) {
       url += `&q=${encodeURIComponent(searchQuery.trim())}`;
     }
 
-    const [countsData, listData] = await Promise.all([
-      apiFetch('/tasks/counts'),
-      apiFetch(url)
-    ]);
-
-    // 1. Update stats & tab counts
-    updateCounts(countsData);
-
-    // 2. Render tasks
+    // 1. Fetch task list first and render immediately
+    const listData = await apiFetch(url);
     allTasks = listData.tasks || [];
     renderTasksList(allTasks);
+
+    // 2. Fetch counts in parallel or non-blocking
+    try {
+      const countsData = await apiFetch('/tasks/counts');
+      updateCounts(countsData);
+    } catch (countErr) {
+      console.warn('Could not update task counts:', countErr);
+    }
 
     const taskLastRefreshed = document.getElementById('taskLastRefreshed');
     if (taskLastRefreshed) {
@@ -118,9 +119,9 @@ async function loadTasks(silent = false) {
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           </div>
           <h3 style="color:var(--clay);font-size:1.15rem;margin-bottom:0.4rem;">Failed to load tasks / பணிகளை ஏற்ற முடியவில்லை</h3>
-          <p style="color:var(--muted);font-size:0.88rem;max-width:420px;margin:0 auto 1.2rem;">${escapeHtml(err.message || 'Network or server error')}</p>
+          <p style="color:var(--muted);font-size:0.88rem;max-width:440px;margin:0 auto 1.2rem;">${escapeHtml(err.message || 'Cannot connect to server. Ensure http://localhost:4000 is running.')}</p>
           <button type="button" class="btn btn-primary" onclick="loadTasks()" style="display:inline-flex;align-items:center;gap:0.4rem;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
             Try Again / மீண்டும் முயல்க
           </button>
         </div>
@@ -671,11 +672,32 @@ function startTimers() {
 
 // ── App Boot ──────────────────────────────────────────────────
 (async function initTasksPage() {
-  try {
-    const user = await requireAuth();
-    if (!user) return; // requireAuth will redirect to login if unauthenticated
+  // 1. Setup UI interaction listeners right away
+  setupEventListeners();
 
-    setupEventListeners();
+  // 2. Authenticate & load tasks
+  try {
+    const token = getToken();
+    if (!token) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    let user = null;
+    try {
+      user = await requireAuth();
+    } catch (e) {
+      console.warn('requireAuth warning:', e);
+    }
+
+    if (!user) {
+      user = getCachedUser();
+      if (user) {
+        renderUserChip(user);
+      }
+    }
+
+    // Always trigger tasks load
     await loadTasks();
     startTimers();
   } catch (err) {
@@ -683,10 +705,13 @@ function startTimers() {
     const container = getContainer();
     if (container) {
       container.innerHTML = `
-        <div class="task-empty-state card" style="text-align:center;padding:2rem;">
-          <p style="color:var(--clay);font-weight:700;">Could not initialize page.</p>
-          <p style="color:var(--muted);font-size:0.85rem;margin-top:0.4rem;">${escapeHtml(err.message)}</p>
-          <button type="button" class="btn btn-secondary" onclick="window.location.reload()" style="margin-top:0.8rem;">Reload Page</button>
+        <div class="task-empty-state card" style="text-align:center;padding:2.5rem 1.5rem;">
+          <div style="width:48px;height:48px;border-radius:50%;background:var(--clay-wash);color:var(--clay);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <h3 style="color:var(--clay);font-size:1.15rem;margin-bottom:0.4rem;">Could not initialize page / பக்கத்தை ஏற்ற முடியவில்லை</h3>
+          <p style="color:var(--muted);font-size:0.88rem;max-width:440px;margin:0 auto 1.2rem;">${escapeHtml(err.message || 'Cannot reach mill server at http://localhost:4000')}</p>
+          <button type="button" class="btn btn-primary" onclick="window.location.reload()">Reload Page / பக்கத்தை புதுப்பிக்க</button>
         </div>
       `;
     }
