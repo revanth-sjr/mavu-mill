@@ -11,8 +11,8 @@ let currentFilter = 'active';   // 'active' | 'pending' | 'completed' | 'billed'
 let currentCategory = 'all';     // 'all' | 'service' | 'sales'
 let allTasks = [];
 let searchQuery = '';
-let countdownInterval = null;
-let pollInterval = null;
+let taskCountdownInterval = null;
+let taskPollInterval = null;
 let activeModalOrder = null;
 
 // ── Formatters ────────────────────────────────────────────────
@@ -654,16 +654,16 @@ function setupEventListeners() {
 
 // ── Timers ────────────────────────────────────────────────────
 function startTimers() {
-  if (pollInterval) clearInterval(pollInterval);
-  if (countdownInterval) clearInterval(countdownInterval);
+  if (taskPollInterval) clearInterval(taskPollInterval);
+  if (taskCountdownInterval) clearInterval(taskCountdownInterval);
 
   // Auto-refresh poll every 20 seconds
-  pollInterval = setInterval(() => {
+  taskPollInterval = setInterval(() => {
     loadTasks(true);
   }, 20000);
 
   // Live countdown timer re-render every 30 seconds
-  countdownInterval = setInterval(() => {
+  taskCountdownInterval = setInterval(() => {
     if (allTasks.length) {
       renderTasksList(allTasks);
     }
