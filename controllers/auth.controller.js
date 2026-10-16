@@ -1,7 +1,12 @@
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
-const { signToken } = require('../utils/jwt');
+const {
+  signToken,
+  signAccessToken,
+  signRefreshToken,
+  verifyRefreshToken
+} = require('../utils/jwt');
 
 async function login(req, res) {
   const { username, password, rememberMe } = req.body || {};
@@ -16,9 +21,12 @@ async function login(req, res) {
   const ok = await bcrypt.compare(password, user.password_hash);
   if (!ok) return res.status(401).json({ message: 'Invalid username or password.' });
 
-  const token = signToken({ id: user.id }, !!rememberMe);
+  const accessToken = signAccessToken({ id: user.id });
+  const refreshToken = signRefreshToken({ id: user.id }, !!rememberMe);
   res.json({
-    token,
+    token: accessToken,
+    accessToken,
+    refreshToken,
     user: {
       id: user.id,
       username: user.username,
@@ -27,7 +35,7 @@ async function login(req, res) {
       unique_code: user.unique_code,
       uniqueCode: user.unique_code
     },
-    expiresIn: rememberMe ? '30d' : '12h'
+    expiresIn: '15m'
   });
 }
 
@@ -68,8 +76,9 @@ async function changePassword(req, res) {
   const newHash = await bcrypt.hash(newPassword, 10);
   await pool.query('UPDATE users SET password_hash = ? WHERE id = ?', [newHash, req.user.id]);
 
-  const token = signToken({ id: user.id });
-  res.json({ ok: true, message: 'Password changed successfully.', token });
+  const accessToken = signAccessToken({ id: user.id });
+  const refreshToken = signRefreshToken({ id: user.id });
+  res.json({ ok: true, message: 'Password changed successfully.', token: accessToken, accessToken, refreshToken });
 }
 
 async function resetUserPassword(req, res) {
@@ -88,9 +97,44 @@ async function resetUserPassword(req, res) {
 }
 
 async function refreshToken(req, res) {
-  const { rememberMe } = req.body || {};
-  const token = signToken({ id: req.user.id }, !!rememberMe);
-  res.json({ token, user: req.user, message: 'Session extended.' });
+  try {
+    const token = req.body?.refreshToken || req.body?.token;
+    if (!token) {
+      return res.status(400).json({ message: 'Refresh token is required.' });
+    }
+
+    let decoded;
+    try {
+      decoded = verifyRefreshToken(token);
+    } catch (err) {
+      return res.status(403).json({ message: 'Invalid or expired refresh token. Please sign in again.' });
+    }
+
+    const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [decoded.id]);
+    const user = rows[0];
+    if (!user) {
+      return res.status(401).json({ message: 'Account no longer exists.' });
+    }
+
+    const newAccessToken = signAccessToken({ id: user.id });
+    const { rememberMe } = req.body || {};
+    const newRefreshToken = signRefreshToken({ id: user.id }, !!rememberMe);
+
+    const sanitized = Object.assign({}, user);
+    delete sanitized.password_hash;
+    sanitized.uniqueCode = user.unique_code;
+
+    res.json({
+      token: newAccessToken,
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+      user: sanitized,
+      message: 'Access token renewed successfully.'
+    });
+  } catch (err) {
+    console.error('refreshToken controller error:', err);
+    res.status(500).json({ message: 'Server error renewing token.' });
+  }
 }
 
 async function generateUniqueCode(prefix = 'OWN') {
@@ -246,9 +290,12 @@ async function signup(req, res) {
     [cleanUsername, hash, cleanName, assignedRole, uniqueCode, ownerId]
   );
 
-  const token = signToken({ id: result.insertId });
+  const accessToken = signAccessToken({ id: result.insertId });
+  const refreshToken = signRefreshToken({ id: result.insertId });
   res.status(201).json({
-    token,
+    token: accessToken,
+    accessToken,
+    refreshToken,
     user: {
       id: result.insertId,
       username: cleanUsername,
@@ -425,14 +472,17 @@ async function googleAuth(req, res) {
       user = createdRows[0];
     }
 
-    const token = signToken({ id: user.id }, true);
+    const accessToken = signAccessToken({ id: user.id });
+    const refreshToken = signRefreshToken({ id: user.id }, true);
     const sanitizedUser = Object.assign({}, user);
     delete sanitizedUser.password_hash;
     sanitizedUser.uniqueCode = user.unique_code;
 
     return res.json({
       ok: true,
-      token,
+      token: accessToken,
+      accessToken,
+      refreshToken,
       user: sanitizedUser,
       message: `Welcome, ${sanitizedUser.name}! Signed in with Google successfully.`
     });

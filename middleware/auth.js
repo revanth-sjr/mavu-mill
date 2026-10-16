@@ -13,7 +13,7 @@ async function authenticate(req, res, next) {
   try {
     payload = verifyToken(token);
   } catch (err) {
-    return res.status(401).json({ message: 'Session expired. Please log in again.' });
+    return res.status(403).json({ message: 'Session expired. Please refresh session.', code: 'TOKEN_EXPIRED' });
   }
 
   try {

@@ -67,11 +67,13 @@ function toggleTheme() {
 
 // ── Token / cached-user storage ─────────────────────────────────
 function getToken() { return localStorage.getItem('mavu_token'); }
+function getRefreshToken() { return localStorage.getItem('mavu_refresh_token'); }
 function getCachedUser() {
   try { return JSON.parse(localStorage.getItem('mavu_user')); } catch { return null; }
 }
-function setAuth(token, user, rememberMe) {
-  localStorage.setItem('mavu_token', token);
+function setAuth(token, user, rememberMe, refreshToken) {
+  if (token) localStorage.setItem('mavu_token', token);
+  if (refreshToken) localStorage.setItem('mavu_refresh_token', refreshToken);
   if (user) localStorage.setItem('mavu_user', JSON.stringify(user));
   if (rememberMe !== undefined) {
     if (rememberMe) localStorage.setItem('mavu_remember', '1');
@@ -80,6 +82,7 @@ function setAuth(token, user, rememberMe) {
 }
 function clearAuth() {
   localStorage.removeItem('mavu_token');
+  localStorage.removeItem('mavu_refresh_token');
   localStorage.removeItem('mavu_user');
   localStorage.removeItem('mavu_remember');
 }
@@ -129,16 +132,98 @@ function showToast(message, isError = false) {
   }, 3200);
 }
 
-// ── Fetch wrapper: attaches the token, parses JSON, handles auth errors ──
+// ── Concurrency Queue for Refresh Token Requests ─────────────────
+let isRefreshing = false;
+let refreshSubscribers = [];
+
+function subscribeTokenRefresh(cb) {
+  refreshSubscribers.push(cb);
+}
+
+function onRefreshed(newToken) {
+  refreshSubscribers.forEach(cb => cb(newToken));
+  refreshSubscribers = [];
+}
+
+function onRefreshFailed(err) {
+  refreshSubscribers.forEach(cb => cb(null, err));
+  refreshSubscribers = [];
+}
+
+// ── Fetch wrapper: attaches token, intercepts 403 to refresh and retry ──
 async function apiFetch(path, options = {}) {
   const token = getToken();
   const headers = Object.assign({}, options.headers || {});
   if (options.body && !(options.body instanceof FormData)) {
     headers['Content-Type'] = 'application/json';
   }
-  if (token) headers['Authorization'] = 'Bearer ' + token;
+  if (token && !headers['Authorization']) {
+    headers['Authorization'] = 'Bearer ' + token;
+  }
 
-  const res = await fetch(API_BASE + path, Object.assign({}, options, { headers }));
+  const url = path.startsWith('http') ? path : API_BASE + path;
+  const res = await fetch(url, Object.assign({}, options, { headers }));
+
+  // Intercept 403 Forbidden (access token expired) — ignore if already retried or calling /refresh
+  if (res.status === 403 && !options._retry && !path.includes('/refresh')) {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) {
+      clearAuth();
+      window.location.href = 'login.html?expired=1';
+      throw new Error('Session expired. Please sign in again.');
+    }
+
+    if (isRefreshing) {
+      return new Promise((resolve, reject) => {
+        subscribeTokenRefresh((newToken, err) => {
+          if (err) return reject(err);
+          const retryOptions = Object.assign({}, options, {
+            _retry: true,
+            headers: Object.assign({}, options.headers || {}, {
+              'Authorization': 'Bearer ' + newToken
+            })
+          });
+          resolve(apiFetch(path, retryOptions));
+        });
+      });
+    }
+
+    options._retry = true;
+    isRefreshing = true;
+
+    try {
+      const refreshRes = await fetch(API_BASE + '/auth/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken })
+      });
+
+      if (!refreshRes.ok) {
+        throw new Error('Refresh token invalid or expired');
+      }
+
+      const refreshData = await refreshRes.json();
+      const newAccessToken = refreshData.accessToken || refreshData.token;
+      const newRefreshToken = refreshData.refreshToken || refreshToken;
+
+      setAuth(newAccessToken, refreshData.user || getCachedUser(), undefined, newRefreshToken);
+
+      isRefreshing = false;
+      onRefreshed(newAccessToken);
+
+      const retryHeaders = Object.assign({}, options.headers || {}, {
+        'Authorization': 'Bearer ' + newAccessToken
+      });
+      return apiFetch(path, Object.assign({}, options, { headers: retryHeaders }));
+    } catch (refreshErr) {
+      isRefreshing = false;
+      onRefreshFailed(refreshErr);
+      clearAuth();
+      window.location.href = 'login.html?expired=1';
+      throw refreshErr;
+    }
+  }
+
   let data = null;
   try { data = await res.json(); } catch { /* no body */ }
 
@@ -694,9 +779,9 @@ async function extendSession() {
     const isRemembered = localStorage.getItem('mavu_remember') === '1';
     const res = await apiFetch('/auth/refresh', {
       method: 'POST',
-      body: JSON.stringify({ rememberMe: isRemembered })
+      body: JSON.stringify({ refreshToken: getRefreshToken(), rememberMe: isRemembered })
     });
-    setAuth(res.token, res.user);
+    setAuth(res.accessToken || res.token, res.user, isRemembered, res.refreshToken);
     hideSessionWarning();
     updateSessionTimerInSettings();
     showToast('✓ Session extended successfully for ' + (isRemembered ? '30 days' : '12 hours'));
@@ -927,7 +1012,7 @@ if (loginForm) {
         loginError.textContent = (data && (data.error || data.message)) || 'Invalid username or password.';
         return;
       }
-      setAuth(data.token, data.user, rememberMe);
+      setAuth(data.token, data.user, rememberMe, data.refreshToken);
       window.location.href = 'index.html';
     } catch (err) {
       console.error('Login error:', err);
@@ -1045,7 +1130,7 @@ if (signupForm) {
         return;
       }
 
-      setAuth(data.token, data.user, true);
+      setAuth(data.token, data.user, true, data.refreshToken);
       window.location.href = 'index.html';
     } catch (err) {
       console.error('Signup error:', err);
@@ -1111,7 +1196,7 @@ async function handleGoogleCredential(response) {
     if (!res.ok) {
       throw new Error((data && (data.error || data.message)) || 'Google sign-in failed.');
     }
-    setAuth(data.token, data.user, true);
+    setAuth(data.token, data.user, true, data.refreshToken);
     showToast(`✓ Welcome, ${data.user.name || 'User'}!`);
     setTimeout(() => { window.location.href = 'index.html'; }, 300);
   } catch (err) {
@@ -1143,7 +1228,7 @@ async function exchangeGoogleAuthCode(code, redirectUri) {
       throw new Error((data && (data.error || data.message)) || 'Google authentication failed.');
     }
 
-    setAuth(data.token, data.user, true);
+    setAuth(data.token, data.user, true, data.refreshToken);
     showToast(`✓ Welcome, ${data.user.name || 'User'}!`);
     setTimeout(() => { window.location.href = 'index.html'; }, 300);
   } catch (err) {
