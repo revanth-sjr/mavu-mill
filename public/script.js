@@ -343,6 +343,7 @@ async function saveServiceTask() {
   }
 
   try {
+    const selectedProd = getSelectedProduct();
     const payload = {
       customerName: order.name,
       phone: order.phone,
@@ -352,6 +353,7 @@ async function saveServiceTask() {
       rate: order.rate,
       total: order.total,
       customRate: order.customRate,
+      category: (selectedProd && selectedProd.category) ? selectedProd.category : 'service',
       tokenNo,
       readyBy: readyBy ? new Date(readyBy).toISOString() : new Date(Date.now() + 3600000).toISOString(),
       notes

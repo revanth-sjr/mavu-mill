@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS service_tasks (
   customer_phone VARCHAR(20) NULL,
   product_id     INT NULL,
   product_name   VARCHAR(150) NOT NULL,
+  category       ENUM('service', 'sales') NOT NULL DEFAULT 'service',
   unit           VARCHAR(20)  NOT NULL,
   quantity       DECIMAL(10,2) NOT NULL,
   rate           DECIMAL(10,2) NOT NULL,

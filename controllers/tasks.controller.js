@@ -20,6 +20,7 @@ function serializeTask(r) {
     rate: Number(r.rate),
     total: Number(r.total),
     customRate: !!r.custom_rate,
+    category: r.category || 'service',
     readyBy: r.ready_by,
     status: r.status,
     notes: r.notes || '',
@@ -40,7 +41,7 @@ const SELECT_TASKS = `
 
 async function list(req, res) {
   try {
-    const { status, q } = req.query || {};
+    const { status, category, q } = req.query || {};
     let where = [];
     let params = [];
 
@@ -49,6 +50,12 @@ async function list(req, res) {
     } else if (status && ['pending', 'completed', 'billed', 'cancelled'].includes(status)) {
       where.push('t.status = ?');
       params.push(status);
+    }
+
+    if (category && category === 'service') {
+      where.push("(t.category = 'service' OR t.category IS NULL)");
+    } else if (category && category === 'sales') {
+      where.push("t.category = 'sales'");
     }
 
     if (q && q.trim()) {
@@ -82,7 +89,9 @@ async function counts(req, res) {
         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pendingCount,
         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completedCount,
         SUM(CASE WHEN status = 'pending' AND ready_by < NOW() THEN 1 ELSE 0 END) AS overdueCount,
-        SUM(CASE WHEN status = 'billed' AND DATE(billed_at) = CURDATE() THEN 1 ELSE 0 END) AS billedTodayCount
+        SUM(CASE WHEN status = 'billed' AND DATE(billed_at) = CURDATE() THEN 1 ELSE 0 END) AS billedTodayCount,
+        SUM(CASE WHEN status IN ('pending', 'completed') AND (category = 'service' OR category IS NULL) THEN 1 ELSE 0 END) AS serviceCount,
+        SUM(CASE WHEN status IN ('pending', 'completed') AND category = 'sales' THEN 1 ELSE 0 END) AS salesCount
       FROM service_tasks
     `);
 
@@ -91,12 +100,16 @@ async function counts(req, res) {
     const completed = Number(r.completedCount || 0);
     const overdue = Number(r.overdueCount || 0);
     const billedToday = Number(r.billedTodayCount || 0);
+    const serviceCount = Number(r.serviceCount || 0);
+    const salesCount = Number(r.salesCount || 0);
 
     res.json({
       pending,
       completed,
       overdue,
       billedToday,
+      serviceCount,
+      salesCount,
       totalActive: pending + completed
     });
   } catch (err) {
@@ -107,15 +120,17 @@ async function counts(req, res) {
 
 async function getNextToken(req, res) {
   try {
+    const category = req.query?.category === 'sales' ? 'sales' : 'service';
     const [rows] = await pool.query(`
       SELECT COUNT(*) AS countToday 
       FROM service_tasks 
-      WHERE DATE(created_at) = CURDATE()
-    `);
+      WHERE DATE(created_at) = CURDATE() AND (category = ? OR (? = 'service' AND category IS NULL))
+    `, [category, category]);
     const nextNumber = (rows[0]?.countToday || 0) + 1;
+    const prefix = category === 'sales' ? 'Order #' : 'Bag #';
     res.json({
       nextNumber,
-      tokenNo: `Bag #${nextNumber}`
+      tokenNo: `${prefix}${nextNumber}`
     });
   } catch (err) {
     console.error('Get next token error:', err);
@@ -156,8 +171,8 @@ async function create(req, res) {
     // Link or create customer
     const customerId = await findOrCreateCustomer(customerName.trim(), cleanPhone);
 
-    // Find product ID
-    const [productRows] = await pool.query('SELECT id FROM products WHERE name = ?', [product]);
+    // Find product ID and category
+    const [productRows] = await pool.query('SELECT id, category FROM products WHERE name = ?', [product]);
     const productId = productRows.length ? productRows[0].id : null;
 
     // Parse ready_by time
@@ -171,15 +186,26 @@ async function create(req, res) {
     const mysqlReadyBy = readyDate.toISOString().slice(0, 19).replace('T', ' ');
 
     let finalTokenNo = tokenNo ? String(tokenNo).trim() : '';
+    const determinedCategory = (req.body.category && ['service', 'sales'].includes(req.body.category))
+      ? req.body.category
+      : (productRows[0]?.category || 'service');
+
     if (!finalTokenNo) {
       const [countRows] = await pool.query('SELECT COUNT(*) AS c FROM service_tasks WHERE DATE(created_at) = CURDATE()');
-      finalTokenNo = `Bag #${(countRows[0]?.c || 0) + 1}`;
+      const prefix = determinedCategory === 'sales' ? 'Order #' : 'Bag #';
+      finalTokenNo = `${prefix}${(countRows[0]?.c || 0) + 1}`;
+    }
+
+    let createdById = null;
+    if (req.user && req.user.id) {
+      const [uRows] = await pool.query('SELECT id FROM users WHERE id = ?', [req.user.id]);
+      if (uRows.length) createdById = uRows[0].id;
     }
 
     const [result] = await pool.query(
       `INSERT INTO service_tasks
-         (token_no, customer_name, customer_id, customer_phone, product_id, product_name, unit, quantity, rate, total, custom_rate, ready_by, status, notes, created_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
+         (token_no, customer_name, customer_id, customer_phone, product_id, product_name, category, unit, quantity, rate, total, custom_rate, ready_by, status, notes, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
       [
         finalTokenNo,
         customerName.trim(),
@@ -187,6 +213,7 @@ async function create(req, res) {
         cleanPhone,
         productId,
         product,
+        determinedCategory,
         unit,
         qtyNum,
         rateNum,
@@ -194,7 +221,7 @@ async function create(req, res) {
         customRate ? 1 : 0,
         mysqlReadyBy,
         notes ? String(notes).trim() : null,
-        req.user?.id || null
+        createdById
       ]
     );
 

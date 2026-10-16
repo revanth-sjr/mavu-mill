@@ -73,8 +73,8 @@
     <div class="main-col">
       <header class="topbar">
         <div class="topbar-title">
-          <span class="eyebrow">Service Queue</span>
-          <h1>Tasks &amp; Reminders <span style="font-size:1.05rem;font-weight:500;color:var(--muted)">/ அரைவை பணிகள்</span></h1>
+          <span class="eyebrow">Service &amp; Sales Queue</span>
+          <h1>Task Reminders <span style="font-size:1.05rem;font-weight:500;color:var(--muted)">/ பணி நினைவூட்டல்</span></h1>
         </div>
         <div class="topbar-meta">
           <span class="last-updated" id="taskLastRefreshed"></span>
@@ -86,13 +86,13 @@
         <!-- INTRO BAR -->
         <div class="intro-bar print-hide">
           <div>
-            <h2>Service Reminders &amp; Delivery / அரைவை பணி நிர்வாகம்</h2>
-            <p>Monitor grain milling times, mark jobs completed when ready, and generate bills when customers arrive.</p>
+            <h2>Flash Card Task Management / பணிகள் அட்டை பலகை</h2>
+            <p>Track grain milling (Service) &amp; counter orders (Sales). Mark completed when ready and bill when customer arrives.</p>
           </div>
           <div class="intro-badges">
             <a href="index.html" class="btn btn-primary" style="padding:0.45rem 0.9rem;font-size:0.85rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-              <span>+ New Service Intake / புதிய அரைவை</span>
+              <span>+ New Intake / புதிய பதிவு</span>
             </a>
           </div>
         </div>
@@ -100,24 +100,35 @@
         <!-- STAT METRICS CARDS -->
         <div class="task-stats-grid print-hide">
           <div class="task-stat-card card">
-            <div class="task-stat-icon yellow">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <div class="task-stat-icon green">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 4.9V17L12 22l-9-5V6.9L12 2z"/><path d="M12 22V12"/><path d="M12 12L2.7 7.3"/><path d="M12 12l9.3-4.7"/></svg>
             </div>
             <div class="task-stat-content">
-              <span class="task-stat-label">In Progress / பணியில் உள்ளவை</span>
-              <div class="task-stat-val" id="statPendingCount">0</div>
-              <span class="task-stat-sub">Waiting for milling completion</span>
+              <span class="task-stat-label">🌾 Service Jobs / அரைவை பணிகள்</span>
+              <div class="task-stat-val" id="statServiceCount">0</div>
+              <span class="task-stat-sub">Milling &amp; Grinding tasks</span>
             </div>
           </div>
 
           <div class="task-stat-card card">
-            <div class="task-stat-icon green">
+            <div class="task-stat-icon blue">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            </div>
+            <div class="task-stat-content">
+              <span class="task-stat-label">📦 Sales Orders / விற்பனை</span>
+              <div class="task-stat-val" id="statSalesCount">0</div>
+              <span class="task-stat-sub">Counter hold &amp; pre-orders</span>
+            </div>
+          </div>
+
+          <div class="task-stat-card card">
+            <div class="task-stat-icon emerald">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             </div>
             <div class="task-stat-content">
               <span class="task-stat-label">Ready for Pickup / தயார்</span>
               <div class="task-stat-val" id="statCompletedCount">0</div>
-              <span class="task-stat-sub">Awaiting customer arrival</span>
+              <span class="task-stat-sub">Waiting for customer arrival</span>
             </div>
           </div>
 
@@ -131,24 +142,32 @@
               <span class="task-stat-sub">Past estimated ready time</span>
             </div>
           </div>
+        </div>
 
-          <div class="task-stat-card card">
-            <div class="task-stat-icon blue">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            </div>
-            <div class="task-stat-content">
-              <span class="task-stat-label">Billed Today / இன்று முடித்தவை</span>
-              <div class="task-stat-val" id="statBilledTodayCount">0</div>
-              <span class="task-stat-sub">Delivered &amp; receipts issued</span>
-            </div>
-          </div>
+        <!-- CATEGORY SEGMENT BAR -->
+        <div class="task-category-bar print-hide">
+          <button type="button" class="category-pill active" data-category="all">
+            <span class="cat-icon">📑</span>
+            <span>All Tasks / அனைத்தும்</span>
+            <span class="cat-count" id="countAllCat">0</span>
+          </button>
+          <button type="button" class="category-pill" data-category="service">
+            <span class="cat-icon">🌾</span>
+            <span>Service Tasks / அரைவை பணிகள்</span>
+            <span class="cat-count" id="countServiceCat">0</span>
+          </button>
+          <button type="button" class="category-pill" data-category="sales">
+            <span class="cat-icon">📦</span>
+            <span>Sales Orders / விற்பனை ஆர்டர்கள்</span>
+            <span class="cat-count" id="countSalesCat">0</span>
+          </button>
         </div>
 
         <!-- FILTER TABS & SEARCH TOOLBAR -->
         <div class="task-toolbar card print-hide">
           <div class="task-tabs" role="tablist">
             <button type="button" class="task-tab active" data-filter="active">
-              <span>Active Jobs / தற்போதைய பணிகள்</span>
+              <span>Active Tasks / தற்போதைய</span>
               <span class="task-tab-count" id="tabActiveCount">0</span>
             </button>
             <button type="button" class="task-tab" data-filter="pending">
@@ -163,25 +182,24 @@
               <span>Billed / முடிக்கப்பட்டவை</span>
             </button>
             <button type="button" class="task-tab" data-filter="all">
-              <span>All History / அனைத்தும்</span>
+              <span>All History / வரலாறு</span>
             </button>
           </div>
 
           <div class="task-search-wrap">
             <svg class="task-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" id="taskSearchInput" placeholder="Search by Bag #, Customer Name, Phone, Product...">
+            <input type="text" id="taskSearchInput" placeholder="Search by Token/Bag #, Customer, Phone, Product...">
             <button type="button" id="btnRefreshTasks" class="btn-task-refresh" title="Refresh task list">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
             </button>
           </div>
         </div>
 
-        <!-- TASKS LIST / GRID CONTAINER -->
-        <div id="tasksListContainer" class="tasks-grid">
-          <!-- Dynamically populated via tasks.js -->
+        <!-- FLASH CARD SECTIONS CONTAINER -->
+        <div id="tasksListContainer">
           <div class="task-empty-state card">
             <div class="spinner" style="margin:2rem auto;"></div>
-            <p style="text-align:center;color:var(--muted);">Loading service tasks...</p>
+            <p style="text-align:center;color:var(--muted);">Loading tasks...</p>
           </div>
         </div>
 

@@ -152,6 +152,7 @@ async function ensureSchema() {
       customer_phone VARCHAR(20) NULL,
       product_id     INT NULL,
       product_name   VARCHAR(150) NOT NULL,
+      category       ENUM('service', 'sales') NOT NULL DEFAULT 'service',
       unit           VARCHAR(20)  NOT NULL,
       quantity       DECIMAL(10,2) NOT NULL,
       rate           DECIMAL(10,2) NOT NULL,
@@ -221,6 +222,17 @@ async function ensureMigrations() {
     }
   } catch (err) {
     console.warn('Migration warning (users.owner_id):', err.message);
+  }
+
+  // 2b. Ensure category exists in service_tasks table
+  try {
+    const [catCols] = await pool.query(`SHOW COLUMNS FROM service_tasks LIKE 'category'`);
+    if (catCols.length === 0) {
+      console.log('Migrating: adding service_tasks.category ...');
+      await pool.query("ALTER TABLE service_tasks ADD COLUMN category ENUM('service', 'sales') NOT NULL DEFAULT 'service' AFTER product_name");
+    }
+  } catch (err) {
+    console.warn('Migration warning (service_tasks.category):', err.message);
   }
 
   // 3. Ensure all existing users have a unique_code
