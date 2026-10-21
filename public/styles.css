@@ -354,7 +354,7 @@ label.field-label {
 }
 .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
 
-input[type="text"], input[type="number"], input[type="tel"],
+input[type="text"], input[type="email"], input[type="number"], input[type="tel"],
 input[type="password"], input[type="search"], select {
   width: 100%;
   min-height: 44px;
@@ -2062,6 +2062,7 @@ select option {
 
 /* Dark mode overrides for controls */
 [data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="email"],
 [data-theme="dark"] input[type="number"],
 [data-theme="dark"] input[type="tel"],
 [data-theme="dark"] input[type="password"],
