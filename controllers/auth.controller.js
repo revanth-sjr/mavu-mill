@@ -10,33 +10,64 @@ const {
 const { sendOtpEmail } = require('../utils/mailer');
 
 async function login(req, res) {
-  const { username, password, rememberMe } = req.body || {};
-  if (!username || !password) {
-    return res.status(400).json({ message: 'Username and password are required.' });
+  const { username, email, password, rememberMe } = req.body || {};
+  const identifier = String(email || username || '').trim();
+  if (!identifier || !password) {
+    return res.status(400).json({ message: 'Gmail/Email and password are required / மின்னஞ்சல் மற்றும் கடவுச்சொல் தேவை.' });
   }
 
-  const [rows] = await pool.query('SELECT * FROM users WHERE username = ?', [username.trim()]);
-  const user = rows[0];
-  if (!user) return res.status(401).json({ message: 'Invalid username or password.' });
+  // Find user by email or username
+  let user = null;
+  try {
+    const [rows] = await pool.query(
+      'SELECT * FROM users WHERE email = ? OR username = ?',
+      [identifier, identifier]
+    );
+    user = rows[0];
+  } catch (e) {
+    const [rows] = await pool.query('SELECT * FROM users WHERE username = ?', [identifier]);
+    user = rows[0];
+  }
+
+  if (!user) {
+    return res.status(401).json({ message: 'Invalid Gmail or password / தவறான ஜிமெயில் அல்லது கடவுச்சொல்.' });
+  }
 
   const ok = await bcrypt.compare(password, user.password_hash);
-  if (!ok) return res.status(401).json({ message: 'Invalid username or password.' });
+  if (!ok) {
+    return res.status(401).json({ message: 'Invalid Gmail or password / தவறான ஜிமெயில் அல்லது கடவுச்சொல்.' });
+  }
 
-  const accessToken = signAccessToken({ id: user.id });
-  const refreshToken = signRefreshToken({ id: user.id }, !!rememberMe);
-  res.json({
-    token: accessToken,
-    accessToken,
-    refreshToken,
-    user: {
-      id: user.id,
-      username: user.username,
-      name: user.name,
-      role: user.role,
-      unique_code: user.unique_code,
-      uniqueCode: user.unique_code
-    },
-    expiresIn: '15m'
+  // Password verified! Generate and dispatch 2FA OTP to the user's Gmail
+  let targetEmail = user.email;
+  if (!targetEmail && user.username && user.username.includes('@')) {
+    targetEmail = user.username;
+  }
+  if (!targetEmail) {
+    targetEmail = process.env.SMTP_USER || 'revanthsjr@gmail.com';
+  }
+
+  const otp = String(Math.floor(100000 + Math.random() * 900000));
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+  // Clear previous OTPs and record new one
+  await pool.query('DELETE FROM email_otps WHERE email = ? OR user_id = ?', [targetEmail.toLowerCase(), user.id]);
+  await pool.query(
+    'INSERT INTO email_otps (email, user_id, otp_code, expires_at) VALUES (?, ?, ?, ?)',
+    [targetEmail.toLowerCase(), user.id, otp, expiresAt]
+  );
+
+  // Send real email via SMTP
+  const mailResult = await sendOtpEmail(targetEmail, otp, user.name || user.username);
+
+  return res.json({
+    ok: true,
+    requiresOtp: true,
+    email: targetEmail,
+    rememberMe: !!rememberMe,
+    devMode: !!mailResult.devMode,
+    devOtp: mailResult.devOtp,
+    message: `Password verified! 6-digit OTP sent to ${targetEmail} / கடவுச்சொல் சரிபார்க்கப்பட்டது. உங்கள் ஜிமெயிலுக்கு OTP அனுப்பப்பட்டுள்ளது.`
   });
 }
 
@@ -233,16 +264,10 @@ async function signup(req, res) {
   const cleanName = String(name).trim();
   const assignedRole = role === 'staff' ? 'staff' : 'admin';
 
-  // 1. Prevent fake Gmail accounts: Gmail users MUST authenticate via "Continue with Google"
+  // 1. Validate email structure or username format
   const lowerUser = cleanUsername.toLowerCase();
-  if (lowerUser.endsWith('@gmail.com') || lowerUser.endsWith('@googlemail.com')) {
-    return res.status(400).json({
-      message: 'Gmail accounts must sign in using the "Continue with Google" button / ஜிமெயில் கணக்குகளுக்கு "Continue with Google" பொத்தானைப் பயன்படுத்தவும்.'
-    });
-  }
-
-  // 2. Validate email structure or username format
-  if (cleanUsername.includes('@')) {
+  const isEmail = cleanUsername.includes('@');
+  if (isEmail) {
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(cleanUsername)) {
       return res.status(400).json({ message: 'Please provide a valid email address / சரியான மின்னஞ்சல் முகவரியை உள்ளிடவும்.' });
@@ -279,16 +304,20 @@ async function signup(req, res) {
     ownerId = owners[0].id;
   }
 
-  const [existing] = await pool.query('SELECT id FROM users WHERE username = ?', [cleanUsername]);
+  const userEmail = isEmail ? cleanUsername.toLowerCase() : null;
+  const [existing] = await pool.query(
+    'SELECT id FROM users WHERE username = ? OR (email IS NOT NULL AND email = ?)',
+    [cleanUsername, userEmail || '']
+  );
   if (existing.length) {
-    return res.status(409).json({ message: 'That username is already taken. Please sign in or use another username.' });
+    return res.status(409).json({ message: 'An account with that Gmail or username already exists. Please sign in.' });
   }
 
   const uniqueCode = await generateUniqueCode(assignedRole === 'admin' ? 'OWN' : 'STF');
   const hash = await bcrypt.hash(password, 10);
   const [result] = await pool.query(
-    'INSERT INTO users (username, password_hash, name, role, unique_code, owner_id) VALUES (?, ?, ?, ?, ?, ?)',
-    [cleanUsername, hash, cleanName, assignedRole, uniqueCode, ownerId]
+    'INSERT INTO users (username, email, password_hash, name, role, unique_code, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [cleanUsername, userEmail, hash, cleanName, assignedRole, uniqueCode, ownerId]
   );
 
   const accessToken = signAccessToken({ id: result.insertId });
@@ -579,17 +608,25 @@ async function verifyEmailOtp(req, res) {
       return res.status(400).json({ message: 'Invalid or expired OTP. Please try again / தவறான அல்லது காலாவதியான OTP.' });
     }
 
+    const otpRow = rows[0];
+
     // Consume OTP so it cannot be reused
-    await pool.query('DELETE FROM email_otps WHERE email = ?', [cleanEmail]);
+    await pool.query('DELETE FROM email_otps WHERE id = ?', [otpRow.id]);
 
     // Retrieve user details
     let user = null;
-    try {
-      const [userRows] = await pool.query('SELECT * FROM users WHERE username = ? OR email = ?', [cleanEmail, cleanEmail]);
-      user = userRows[0];
-    } catch (e) {
-      const [userRows] = await pool.query('SELECT * FROM users WHERE username = ?', [cleanEmail]);
-      user = userRows[0];
+    if (otpRow.user_id) {
+      const [uRows] = await pool.query('SELECT * FROM users WHERE id = ?', [otpRow.user_id]);
+      user = uRows[0];
+    }
+    if (!user) {
+      try {
+        const [userRows] = await pool.query('SELECT * FROM users WHERE username = ? OR email = ?', [cleanEmail, cleanEmail]);
+        user = userRows[0];
+      } catch (e) {
+        const [userRows] = await pool.query('SELECT * FROM users WHERE username = ?', [cleanEmail]);
+        user = userRows[0];
+      }
     }
 
     if (!user) {

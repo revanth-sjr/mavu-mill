@@ -84,8 +84,8 @@
 
         <form id="loginForm" novalidate>
           <div class="field-group">
-            <label for="loginUsername">Username / பயனர்பெயர்</label>
-            <input id="loginUsername" type="text" placeholder="Your username or email" autocomplete="username" required>
+            <label for="loginUsername">Gmail / Email / மின்னஞ்சல்</label>
+            <input id="loginUsername" type="email" placeholder="e.g. revanthsjr@gmail.com" autocomplete="username" required>
           </div>
           <div class="field-group">
             <label for="loginPassword">Password / கடவுச்சொல்</label>
@@ -94,79 +94,56 @@
 
           <div class="auth-options">
             <label class="remember-label" for="loginRememberMe">
-              <input type="checkbox" id="loginRememberMe" name="rememberMe">
+              <input type="checkbox" id="loginRememberMe" name="rememberMe" checked>
               <span>Remember me (30 days) / என்னை நினைவில் கொள்க</span>
             </label>
           </div>
 
-          <button type="submit" class="btn btn-primary" id="loginSubmitBtn" style="width:100%;margin-top:0.5rem">Sign in</button>
+          <button type="submit" class="btn btn-primary" id="loginSubmitBtn" style="width:100%;margin-top:0.5rem">
+            Sign in / உள்நுழைக
+          </button>
           <p class="form-message" id="loginError" aria-live="polite"></p>
 
-          <div class="auth-alt-action" style="margin-top:0.85rem;text-align:center;">
-            <button type="button" class="btn btn-secondary" id="btnSwitchToOtp" style="width:100%;display:flex;align-items:center;justify-content:center;gap:0.45rem;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-              <span>Sign in with Email OTP / OTP மூலம் உள்நுழைக</span>
-            </button>
-          </div>
-
-          <p class="auth-switch-prompt">
+          <p class="auth-switch-prompt" style="margin-top:1.1rem">
             Don't have an account? <button type="button" class="btn-link-auth" id="linkToSignup">Create account / புதிய கணக்கு</button>
           </p>
         </form>
 
-        <!-- OTP SIGN IN FORM -->
+        <!-- 2FA OTP VERIFICATION FORM (Shown immediately after valid password) -->
         <form id="otpLoginForm" style="display:none;" novalidate>
-          <div class="otp-banner">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-            <span>Passwordless Sign-in via Email OTP / கடவுச்சொல் இல்லா உள்நுழைவு</span>
+          <div class="otp-banner" style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:var(--sprout);margin-bottom:1.1rem;display:flex;align-items:center;gap:0.5rem;padding:0.75rem 0.9rem;border-radius:8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            <span style="font-weight:600;font-size:0.88rem;">Password Verified &middot; Enter OTP / கடவுச்சொல் சரிபார்க்கப்பட்டது</span>
           </div>
 
-          <!-- STEP 1: Enter Email & Send OTP -->
-          <div id="otpStepEmail">
-            <div class="field-group">
-              <label for="otpEmailInput">Registered Email / பதிவு செய்த மின்னஞ்சல்</label>
-              <input id="otpEmailInput" type="email" placeholder="e.g. revanth@gmail.com" autocomplete="email" required>
-              <p class="field-hint" style="color:var(--muted);font-size:0.75rem;margin-top:0.3rem;">
-                A 6-digit one-time code will be sent to your email.
-              </p>
-            </div>
-            <button type="button" class="btn btn-primary" id="btnSendOtp" style="width:100%;margin-top:0.5rem">
-              Send OTP Code / OTP பெறுக
+          <div class="otp-sent-notice" style="margin-bottom:0.9rem;">
+            <span style="font-size:0.86rem;color:var(--muted);line-height:1.45;">
+              A 6-digit OTP has been sent to your Gmail:<br>
+              <strong id="otpTargetEmail" style="color:var(--text);font-size:0.96rem;">-</strong>
+            </span>
+          </div>
+
+          <div class="field-group">
+            <label for="otpCodeInput">Enter 6-Digit OTP / 6-இலக்க OTP குறியீடு</label>
+            <input id="otpCodeInput" type="text" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="123456" autocomplete="one-time-code" style="font-family:var(--mono-face);font-size:1.4rem;letter-spacing:6px;text-align:center;font-weight:700;">
+          </div>
+
+          <div class="auth-options" style="display:flex;justify-content:space-between;align-items:center;margin-top:0.4rem;">
+            <span style="font-size:0.75rem;color:var(--muted);">Valid for 10 minutes</span>
+            <button type="button" id="btnResendOtp" class="btn-link-auth" style="font-size:0.78rem;" disabled>
+              Resend in <span id="otpCountdown">60</span>s
             </button>
           </div>
 
-          <!-- STEP 2: Enter OTP & Verify -->
-          <div id="otpStepVerify" style="display:none;">
-            <div class="otp-sent-notice">
-              <span>OTP sent to: <strong id="otpTargetEmail">-</strong></span>
-              <button type="button" id="btnChangeOtpEmail" class="btn-link-auth" style="font-size:0.78rem;">Change / மாற்று</button>
-            </div>
-
-            <div class="field-group" style="margin-top:0.8rem;">
-              <label for="otpCodeInput">Enter 6-Digit OTP / 6-இலக்க OTP குறியீடு</label>
-              <input id="otpCodeInput" type="text" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="123456" autocomplete="one-time-code" style="font-family:var(--mono-face);font-size:1.35rem;letter-spacing:6px;text-align:center;font-weight:700;">
-            </div>
-
-            <div class="auth-options" style="display:flex;justify-content:space-between;align-items:center;margin-top:0.4rem;">
-              <label class="remember-label" for="otpRememberMe">
-                <input type="checkbox" id="otpRememberMe" name="rememberMe" checked>
-                <span>Remember me (30 days)</span>
-              </label>
-              <button type="button" id="btnResendOtp" class="btn-link-auth" style="font-size:0.78rem;" disabled>
-                Resend in <span id="otpCountdown">60</span>s
-              </button>
-            </div>
-
-            <button type="button" class="btn btn-primary" id="btnVerifyOtp" style="width:100%;margin-top:0.7rem">
-              Verify &amp; Sign in / உள்நுழைக
-            </button>
-          </div>
+          <button type="button" class="btn btn-primary" id="btnVerifyOtp" style="width:100%;margin-top:0.8rem">
+            Verify &amp; Sign in / உள்நுழைக
+          </button>
 
           <p class="form-message" id="otpError" aria-live="polite"></p>
 
           <p class="auth-switch-prompt" style="margin-top:1.1rem">
             <button type="button" class="btn-link-auth" id="btnBackToPassword">
-              &larr; Sign in with password instead / கடவுச்சொல் மூலம் நுழைய
+              &larr; Re-enter password or change email / கடவுச்சொல் மாற்று
             </button>
           </p>
         </form>

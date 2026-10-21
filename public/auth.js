@@ -991,7 +991,7 @@ if (loginForm) {
     const password = document.getElementById('loginPassword').value;
     const rememberMe = !!document.getElementById('loginRememberMe')?.checked;
 
-    if (loginBtn) { loginBtn.disabled = true; loginBtn.textContent = 'Signing in...'; }
+    if (loginBtn) { loginBtn.disabled = true; loginBtn.textContent = 'Verifying...'; }
     try {
       const res = await fetch(API_BASE + '/auth/login', {
         method: 'POST',
@@ -1011,31 +1011,38 @@ if (loginForm) {
       }
 
       if (!res.ok) {
-        loginError.textContent = (data && (data.error || data.message)) || 'Invalid username or password.';
+        loginError.textContent = (data && (data.error || data.message)) || 'Invalid Gmail or password.';
         return;
       }
+
+      // Password verified! Now transition to 2FA OTP verification step
+      if (data.requiresOtp) {
+        current2faEmail = data.email;
+        current2faRememberMe = !!rememberMe;
+        show2faOtpStep(data);
+        return;
+      }
+
       setAuth(data.token, data.user, rememberMe, data.refreshToken);
       window.location.href = 'index.html';
     } catch (err) {
       console.error('Login error:', err);
       loginError.textContent = err.message || 'Could not reach the server. Please check your connection and try again.';
     } finally {
-      if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Sign in'; }
+      if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Sign in / உள்நுழைக'; }
     }
   });
 }
 
-// ── OTP Login Wiring ──────────────────────────────────────────────
-const btnSwitchToOtp = document.getElementById('btnSwitchToOtp');
+// ── 2FA Email OTP Verification Wiring ─────────────────────────────
+let current2faEmail = '';
+let current2faRememberMe = true;
+const googleAuthBox = document.querySelector('.google-auth-box');
+const authModePills = document.querySelector('.auth-mode-pills');
 const btnBackToPassword = document.getElementById('btnBackToPassword');
-const btnSendOtp = document.getElementById('btnSendOtp');
 const btnVerifyOtp = document.getElementById('btnVerifyOtp');
 const btnResendOtp = document.getElementById('btnResendOtp');
-const btnChangeOtpEmail = document.getElementById('btnChangeOtpEmail');
-const otpEmailInput = document.getElementById('otpEmailInput');
 const otpCodeInput = document.getElementById('otpCodeInput');
-const otpStepEmail = document.getElementById('otpStepEmail');
-const otpStepVerify = document.getElementById('otpStepVerify');
 const otpTargetEmail = document.getElementById('otpTargetEmail');
 const otpError = document.getElementById('otpError');
 let otpCountdownInterval = null;
@@ -1064,83 +1071,23 @@ function startOtpCountdown(seconds = 60) {
   }, 1000);
 }
 
-if (btnSwitchToOtp) {
-  btnSwitchToOtp.addEventListener('click', () => {
-    if (loginForm) loginForm.style.display = 'none';
-    if (otpLoginForm) {
-      otpLoginForm.style.display = 'block';
-      if (otpError) otpError.textContent = '';
-      if (authMainTitle) authMainTitle.textContent = 'Sign in with OTP';
-      if (authSubTitle) authSubTitle.textContent = 'மின்னஞ்சல் OTP மூலம் உள்நுழைக';
-      if (otpEmailInput) {
-        const currentLoginUsername = document.getElementById('loginUsername')?.value.trim();
-        if (currentLoginUsername && currentLoginUsername.includes('@')) {
-          otpEmailInput.value = currentLoginUsername;
-        }
-        otpEmailInput.focus();
-      }
-    }
-  });
-}
+function show2faOtpStep(data) {
+  if (loginForm) loginForm.style.display = 'none';
+  if (googleAuthBox) googleAuthBox.style.display = 'none';
+  if (authModePills) authModePills.style.display = 'none';
 
-if (btnBackToPassword) {
-  btnBackToPassword.addEventListener('click', () => {
-    if (otpLoginForm) otpLoginForm.style.display = 'none';
-    if (loginForm) loginForm.style.display = 'block';
-    if (authMainTitle) authMainTitle.textContent = 'Sign in';
-    if (authSubTitle) authSubTitle.textContent = 'உள்நுழைய';
-    const userInput = document.getElementById('loginUsername');
-    if (userInput) userInput.focus();
-  });
-}
-
-if (btnChangeOtpEmail) {
-  btnChangeOtpEmail.addEventListener('click', () => {
-    if (otpStepVerify) otpStepVerify.style.display = 'none';
-    if (otpStepEmail) otpStepEmail.style.display = 'block';
-    if (otpError) otpError.textContent = '';
-    if (otpEmailInput) otpEmailInput.focus();
-  });
-}
-
-async function requestEmailOtp() {
-  const email = otpEmailInput ? otpEmailInput.value.trim() : '';
-  if (!email) {
-    if (otpError) {
-      otpError.style.color = 'var(--red)';
-      otpError.textContent = 'Please enter your registered email address / மின்னஞ்சலை உள்ளிடவும்.';
-    }
-    return;
-  }
-
-  if (otpError) otpError.textContent = '';
-  if (btnSendOtp) {
-    btnSendOtp.disabled = true;
-    btnSendOtp.textContent = 'Sending OTP...';
-  }
-  if (btnResendOtp) {
-    btnResendOtp.disabled = true;
-    btnResendOtp.textContent = 'Sending...';
-  }
-
-  try {
-    const res = await fetch(`${API_BASE}/auth/otp/send`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    });
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.message || 'Failed to send OTP.');
-    }
-
-    if (otpTargetEmail) otpTargetEmail.textContent = email;
-    if (otpStepEmail) otpStepEmail.style.display = 'none';
-    if (otpStepVerify) otpStepVerify.style.display = 'block';
+  if (otpLoginForm) {
+    otpLoginForm.style.display = 'block';
+    if (authMainTitle) authMainTitle.textContent = 'Two-Factor Verification';
+    if (authSubTitle) authSubTitle.textContent = 'இருபடி சரிபார்ப்பு (Gmail OTP)';
+    if (otpTargetEmail) otpTargetEmail.textContent = data.email;
     if (otpCodeInput) {
       otpCodeInput.value = '';
       otpCodeInput.focus();
+    }
+    if (otpError) {
+      otpError.textContent = '';
+      otpError.style.color = 'var(--red)';
     }
 
     startOtpCountdown(60);
@@ -1172,33 +1119,64 @@ async function requestEmailOtp() {
         }
       }
     } else {
-      showToast('OTP sent to your email! / மின்னஞ்சலுக்கு OTP அனுப்பப்பட்டது.');
-      if (otpError) {
-        otpError.style.color = 'var(--sprout)';
-        otpError.textContent = data.message || 'OTP sent successfully!';
-      }
-    }
-  } catch (err) {
-    if (otpError) {
-      otpError.style.color = 'var(--red)';
-      otpError.textContent = err.message;
-    }
-  } finally {
-    if (btnSendOtp) {
-      btnSendOtp.disabled = false;
-      btnSendOtp.textContent = 'Send OTP Code / OTP பெறுக';
+      showToast('OTP sent to your Gmail! / ஜிமெயிலுக்கு OTP அனுப்பப்பட்டது.');
     }
   }
 }
 
-if (btnSendOtp) btnSendOtp.addEventListener('click', requestEmailOtp);
-if (btnResendOtp) btnResendOtp.addEventListener('click', requestEmailOtp);
+if (btnBackToPassword) {
+  btnBackToPassword.addEventListener('click', () => {
+    if (otpLoginForm) otpLoginForm.style.display = 'none';
+    if (googleAuthBox) googleAuthBox.style.display = 'block';
+    if (authModePills) authModePills.style.display = 'flex';
+    if (loginForm) loginForm.style.display = 'block';
+    if (authMainTitle) authMainTitle.textContent = 'Sign in';
+    if (authSubTitle) authSubTitle.textContent = 'உள்நுழைய';
+    const passwordInput = document.getElementById('loginPassword');
+    if (passwordInput) passwordInput.focus();
+  });
+}
+
+if (btnResendOtp) {
+  btnResendOtp.addEventListener('click', async () => {
+    const email = current2faEmail || otpTargetEmail?.textContent || '';
+    if (!email) return;
+
+    btnResendOtp.disabled = true;
+    btnResendOtp.textContent = 'Sending...';
+
+    try {
+      const res = await fetch(`${API_BASE}/auth/otp/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to resend OTP.');
+
+      startOtpCountdown(60);
+      showToast('New OTP sent to your Gmail! / புதிய OTP அனுப்பப்பட்டது.');
+      if (otpError) otpError.textContent = '';
+      if (otpCodeInput) {
+        otpCodeInput.value = '';
+        otpCodeInput.focus();
+      }
+    } catch (err) {
+      if (otpError) {
+        otpError.style.color = 'var(--red)';
+        otpError.textContent = err.message;
+      }
+      btnResendOtp.disabled = false;
+      btnResendOtp.textContent = 'Resend OTP';
+    }
+  });
+}
 
 if (btnVerifyOtp) {
   btnVerifyOtp.addEventListener('click', async () => {
-    const email = otpEmailInput ? otpEmailInput.value.trim() : '';
+    const email = current2faEmail || otpTargetEmail?.textContent || '';
     const otp = otpCodeInput ? otpCodeInput.value.trim() : '';
-    const rememberMe = !!document.getElementById('otpRememberMe')?.checked;
+    const rememberMe = current2faRememberMe;
 
     if (!otp || otp.length < 6) {
       if (otpError) {
@@ -1242,18 +1220,15 @@ if (btnVerifyOtp) {
 }
 
 if (otpCodeInput) {
+  otpCodeInput.addEventListener('input', () => {
+    if (otpCodeInput.value.trim().length === 6) {
+      if (btnVerifyOtp) btnVerifyOtp.click();
+    }
+  });
   otpCodeInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       if (btnVerifyOtp) btnVerifyOtp.click();
-    }
-  });
-}
-if (otpEmailInput) {
-  otpEmailInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (btnSendOtp) btnSendOtp.click();
     }
   });
 }

@@ -178,6 +178,7 @@ async function ensureSchema() {
     CREATE TABLE IF NOT EXISTS email_otps (
       id          INT AUTO_INCREMENT PRIMARY KEY,
       email       VARCHAR(150) NOT NULL,
+      user_id     INT NULL,
       otp_code    VARCHAR(20)  NOT NULL,
       expires_at  DATETIME NOT NULL,
       created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -320,12 +321,17 @@ async function ensureMigrations() {
       CREATE TABLE IF NOT EXISTS email_otps (
         id          INT AUTO_INCREMENT PRIMARY KEY,
         email       VARCHAR(150) NOT NULL,
+        user_id     INT NULL,
         otp_code    VARCHAR(20)  NOT NULL,
         expires_at  DATETIME NOT NULL,
         created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
         INDEX idx_email_expires (email, expires_at)
       )
     `);
+    const [otpUidCols] = await pool.query(`SHOW COLUMNS FROM email_otps LIKE 'user_id'`);
+    if (!otpUidCols.length) {
+      await pool.query(`ALTER TABLE email_otps ADD COLUMN user_id INT NULL AFTER email`);
+    }
   } catch (err) {
     console.warn('Migration warning (email_otps):', err.message);
   }
