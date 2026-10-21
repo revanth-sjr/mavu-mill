@@ -1491,6 +1491,7 @@ function startGoogleAuthFlow() {
     return;
   }
   const redirectUri = getGoogleRedirectUri();
+  showToast('Connecting to Google / கூகிள் உடன் இணைகிறது...');
 
   // Try modern Google OAuth2 popup code client first
   if (window.google && google.accounts && google.accounts.oauth2) {
@@ -1502,10 +1503,15 @@ function startGoogleAuthFlow() {
         callback: async (response) => {
           if (response && response.code) {
             await exchangeGoogleAuthCode(response.code, redirectUri);
+          } else if (response && response.error) {
+            showToast('Google Sign-In: ' + (response.error_description || response.error), true);
           }
         },
         error_callback: (err) => {
           console.warn('Google popup error, falling back to redirect:', err);
+          if (err && err.type === 'origin_mismatch') {
+            showToast('Google error: Origin not allowed. Add this domain to Authorized origins in Google Cloud Console.', true);
+          }
           redirectToGoogleOAuth(redirectUri);
         }
       });
@@ -1519,6 +1525,7 @@ function startGoogleAuthFlow() {
   // Direct OAuth2 redirect flow
   redirectToGoogleOAuth(redirectUri);
 }
+window.startGoogleAuthFlow = startGoogleAuthFlow;
 
 function redirectToGoogleOAuth(redirectUri) {
   showToast('Redirecting to Google / கூகிள் பக்கத்திற்கு செல்கிறது...');
