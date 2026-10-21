@@ -58,15 +58,20 @@ async function login(req, res) {
   );
 
   // Send real email via SMTP
-  const mailResult = await sendOtpEmail(targetEmail, otp, user.name || user.username);
+  try {
+    await sendOtpEmail(targetEmail, otp, user.name || user.username);
+  } catch (mailErr) {
+    console.error('Failed to send OTP email:', mailErr.message);
+    return res.status(500).json({
+      message: 'Failed to send OTP to Gmail: ' + mailErr.message
+    });
+  }
 
   return res.json({
     ok: true,
     requiresOtp: true,
     email: targetEmail,
     rememberMe: !!rememberMe,
-    devMode: !!mailResult.devMode,
-    devOtp: mailResult.devOtp,
     message: `Password verified! 6-digit OTP sent to ${targetEmail} / கடவுச்சொல் சரிபார்க்கப்பட்டது. உங்கள் ஜிமெயிலுக்கு OTP அனுப்பப்பட்டுள்ளது.`
   });
 }
@@ -573,13 +578,18 @@ async function sendEmailOtp(req, res) {
     );
 
     // Send email
-    const result = await sendOtpEmail(cleanEmail, otp, user.name || user.username);
+    try {
+      await sendOtpEmail(cleanEmail, otp, user ? (user.name || user.username) : 'User');
+    } catch (mailErr) {
+      console.error('Failed to send OTP email:', mailErr.message);
+      return res.status(500).json({
+        message: 'Failed to send OTP to Gmail: ' + mailErr.message
+      });
+    }
 
     return res.json({
       ok: true,
-      message: 'OTP has been sent to your email. Please check your inbox / உங்கள் மின்னஞ்சலுக்கு OTP அனுப்பப்பட்டுள்ளது.',
-      devMode: !!result.devMode,
-      devOtp: result.devOtp, // Only populated in dev mode if SMTP credentials are not yet set
+      message: 'OTP has been sent to your Gmail. Please check your inbox / உங்கள் ஜிமெயிலுக்கு OTP அனுப்பப்பட்டுள்ளது.',
       expiresInMinutes: 10
     });
   } catch (err) {

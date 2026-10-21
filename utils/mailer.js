@@ -100,13 +100,7 @@ async function sendOtpEmail(toEmail, otp, recipientName = 'User') {
   `;
 
   if (!mailer) {
-    console.log('\n======================================================');
-    console.log('  [EMAIL OTP - DEVELOPMENT FALLBACK]');
-    console.log(`  To:      ${toEmail} (${recipientName})`);
-    console.log(`  OTP:     ${otp}`);
-    console.log('  Notice:  Configure SMTP_USER & SMTP_PASS in .env to send real emails.');
-    console.log('======================================================\n');
-    return { sent: true, devMode: true, devOtp: otp };
+    throw new Error('Email service is not configured. Please set SMTP_USER and SMTP_PASS in environment variables / மின்னஞ்சல் சேவை அமைக்கப்படவில்லை.');
   }
 
   try {
