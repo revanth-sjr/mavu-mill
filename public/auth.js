@@ -1148,8 +1148,28 @@ async function requestEmailOtp() {
     if (data.devMode && data.devOtp) {
       showToast(`DEV MODE: OTP code is ${data.devOtp}`, 10000);
       if (otpError) {
-        otpError.style.color = 'var(--mill)';
-        otpError.textContent = `DEV TEST CODE: ${data.devOtp} (Valid for 10 mins)`;
+        otpError.style.color = '#15803d';
+        otpError.innerHTML = `
+          <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:10px 12px;margin-top:8px;text-align:center;">
+            <div style="font-size:0.75rem;color:#166534;font-weight:600;margin-bottom:4px;">
+              DEV TEST OTP (SMTP not configured in .env):
+            </div>
+            <div style="font-size:1.4rem;font-weight:800;letter-spacing:4px;color:#15803d;margin:4px 0;">
+              ${data.devOtp}
+            </div>
+            <button type="button" id="btnAutoFillDevOtp" class="btn btn-secondary btn-sm" style="margin-top:6px;padding:4px 10px;font-size:0.78rem;">
+              Click to Auto-fill / தானாக நிரப்ப
+            </button>
+          </div>
+        `;
+        const autoFillBtn = document.getElementById('btnAutoFillDevOtp');
+        if (autoFillBtn && otpCodeInput) {
+          autoFillBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            otpCodeInput.value = data.devOtp;
+            otpCodeInput.focus();
+          });
+        }
       }
     } else {
       showToast('OTP sent to your email! / மின்னஞ்சலுக்கு OTP அனுப்பப்பட்டது.');
