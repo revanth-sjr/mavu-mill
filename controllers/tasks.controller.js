@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { findOrCreateCustomer } = require('./customers.controller');
+const { sendTaskReadyEmail } = require('../utils/mailer');
 
 function serializeTask(r) {
   const now = new Date();
@@ -13,6 +14,7 @@ function serializeTask(r) {
     customerName: r.customer_name,
     customerId: r.customer_id,
     phone: r.customer_phone || r.effective_phone || null,
+    customerEmail: r.customer_email || null,
     productId: r.product_id,
     productName: r.product_name,
     unit: r.unit,
@@ -24,6 +26,7 @@ function serializeTask(r) {
     readyBy: r.ready_by,
     status: r.status,
     notes: r.notes || '',
+    reminderSentAt: r.reminder_sent_at || null,
     orderId: r.order_id,
     createdAt: r.created_at,
     completedAt: r.completed_at,
@@ -34,7 +37,7 @@ function serializeTask(r) {
 }
 
 const SELECT_TASKS = `
-  SELECT t.*, COALESCE(t.customer_phone, c.phone) AS effective_phone
+  SELECT t.*, COALESCE(t.customer_phone, c.phone) AS effective_phone, c.email AS customer_email
   FROM service_tasks t
   LEFT JOIN customers c ON t.customer_id = c.id
 `;
@@ -371,6 +374,133 @@ async function remove(req, res) {
   }
 }
 
+/**
+ * POST /api/tasks/:id/remind
+ * Sends customer pickup reminder via WhatsApp and/or Email.
+ * Updates reminder_sent_at = NOW() in database.
+ */
+async function sendReminder(req, res) {
+  try {
+    const id = Number(req.params.id);
+    const { phone: overridePhone, email: overrideEmail, reminderType } = req.body || {};
+
+    const [rows] = await pool.query(`${SELECT_TASKS} WHERE t.id = ?`, [id]);
+    const rawTask = rows[0];
+    if (!rawTask) {
+      return res.status(404).json({ message: 'Task not found.' });
+    }
+
+    const task = serializeTask(rawTask);
+    const targetPhone = (overridePhone || task.phone || '').toString().trim();
+    const targetEmail = (overrideEmail || task.customerEmail || '').toString().trim();
+
+    // If phone was provided and task or customer didn't have phone, save it
+    if (targetPhone && !task.phone) {
+      await pool.query('UPDATE service_tasks SET customer_phone = ? WHERE id = ?', [targetPhone, id]);
+      if (task.customerId) {
+        await pool.query('UPDATE customers SET phone = COALESCE(phone, ?) WHERE id = ?', [targetPhone, task.customerId]);
+      }
+      task.phone = targetPhone;
+    }
+
+    // Format phone for WhatsApp (clean non-digits; prepend 91 for standard 10-digit Indian numbers)
+    let cleanPhoneDigits = targetPhone.replace(/\D/g, '');
+    if (cleanPhoneDigits.length === 10) {
+      cleanPhoneDigits = '91' + cleanPhoneDigits;
+    }
+
+    // Build bilingual WhatsApp reminder message
+    let messageText = '';
+    const isReadyReminder = (reminderType === 'ready' || (!reminderType && task.status === 'completed'));
+    const isReceipt = (reminderType === 'receipt' || (!reminderType && task.status === 'billed'));
+
+    if (isReadyReminder) {
+      messageText = 
+`*சக்தி எண்ணெய் மற்றும் மாவு ஆலை*
+*Sakthi Oil & Flour Mill*
+--------------------------------
+வணக்கம் *${task.customerName}*!
+
+உங்கள் அரைவை / பொருட்கள் தயார் நிலையில் உள்ளது. ஆலையில் வந்து பெற்றுக் கொள்ளவும்.
+Your order is *READY FOR PICKUP* at our mill counter.
+
+[டோக்கன் / Token]: ${task.tokenNo}
+[பொருள் / Item]: ${task.productName}
+[அளவு / Qty]: ${task.quantity} ${task.unit}
+[மொத்த கட்டணம் / Amount]: ₹${task.total}
+
+ஆலை முகவரி: சக்தி எண்ணெய் மற்றும் மாவு ஆலை
+நன்றி / Thank you!`;
+    } else if (isReceipt) {
+      messageText = 
+`*சக்தி எண்ணெய் மற்றும் மாவு ஆலை*
+*Sakthi Oil & Flour Mill*
+--------------------------------
+வணக்கம் *${task.customerName}*!
+
+உங்கள் பில் / ரசீது விவரம்:
+Your billing receipt details:
+
+[டோக்கன் / Token]: ${task.tokenNo}
+[பொருள் / Item]: ${task.productName}
+[அளவு / Qty]: ${task.quantity} ${task.unit}
+[கட்டணம் / Total]: ₹${task.total}
+[நிலை / Status]: நிறைவு பெற்றது (Delivered)
+
+நன்றி, மீண்டும் வருக! / Thank you, visit again!`;
+    } else {
+      // Intake / Token slip notification
+      messageText = 
+`*சக்தி எண்ணெய் மற்றும் மாவு ஆலை*
+*Sakthi Oil & Flour Mill*
+--------------------------------
+வணக்கம் *${task.customerName}*!
+
+உங்கள் அரைவை பதிவு செய்யப்பட்டது.
+Your milling / order task has been registered.
+
+[டோக்கன் / Token]: ${task.tokenNo}
+[பொருள் / Item]: ${task.productName}
+[அளவு / Qty]: ${task.quantity} ${task.unit}
+[மதிப்பீடு கட்டணம் / Est. Amount]: ₹${task.total}
+
+நேரில் வரும்போது இந்த டோக்கன் எண்ணைக் காண்பிக்கவும்.
+Please present this token number when collecting.
+நன்றி! / Thank you!`;
+    }
+
+    const whatsappUrl = cleanPhoneDigits 
+      ? `https://wa.me/${cleanPhoneDigits}?text=${encodeURIComponent(messageText)}`
+      : null;
+
+    // Update reminder_sent_at timestamp in database
+    await pool.query('UPDATE service_tasks SET reminder_sent_at = NOW() WHERE id = ?', [id]);
+
+    // Send email reminder if email is present
+    let emailResult = null;
+    if (targetEmail && targetEmail.includes('@')) {
+      try {
+        emailResult = await sendTaskReadyEmail(targetEmail, task.customerName, task);
+      } catch (emErr) {
+        console.warn('Email reminder failed:', emErr.message);
+      }
+    }
+
+    const [refetched] = await pool.query(`${SELECT_TASKS} WHERE t.id = ?`, [id]);
+
+    res.json({
+      ok: true,
+      whatsappUrl,
+      emailSent: !!emailResult?.sent,
+      task: serializeTask(refetched[0]),
+      message: 'Reminder recorded successfully!'
+    });
+  } catch (err) {
+    console.error('Send reminder error:', err);
+    res.status(500).json({ message: 'Error processing reminder: ' + err.message });
+  }
+}
+
 module.exports = {
   list,
   counts,
@@ -378,5 +508,6 @@ module.exports = {
   create,
   updateStatus,
   billTask,
-  remove
+  remove,
+  sendReminder
 };

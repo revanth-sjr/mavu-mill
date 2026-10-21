@@ -61,121 +61,218 @@
       </header>
 
       <main id="products-main" class="page-shell">
-        <div class="intro-bar">
+        <div class="intro-bar print-hide">
           <div>
-            <h2>Products &amp; team</h2>
-            <p>Price changes apply to new bills straight away. Team accounts control who can sign in.</p>
+            <h2>Products &amp; team / பொருட்கள் &amp; பணியாளர்</h2>
+            <p>Manage product catalog prices and team accounts with access to this mill.</p>
           </div>
           <div class="intro-badges">
             <span class="badge">Admin only</span>
           </div>
         </div>
 
-        <div class="billing-layout">
+        <!-- STATS OVERVIEW ROW -->
+        <div class="products-stats-row">
+          <div class="product-stat-pill">
+            <div class="stat-icon-wrap" style="background:var(--wash);color:var(--mill)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 12l9 5 9-5M3 16l9 5 9-5"/></svg>
+            </div>
+            <div>
+              <span class="stat-value" id="statTotalCount">0</span>
+              <span class="stat-caption">Total Products / மொத்த பொருட்கள்</span>
+            </div>
+          </div>
 
-          <!-- ADD PRODUCT -->
-          <section class="card form-card" aria-labelledby="add-product-title">
-            <p class="card-title">New product</p>
-            <h2 id="add-product-title" style="margin-bottom:1.1rem">Add a product</h2>
+          <div class="product-stat-pill">
+            <div class="stat-icon-wrap" style="background:rgba(47,158,104,0.14);color:var(--sprout)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            </div>
+            <div>
+              <span class="stat-value" id="statSalesCount">0</span>
+              <span class="stat-caption">Sales Items (விற்பனை)</span>
+            </div>
+          </div>
 
-            <form id="newProductForm" novalidate>
-              <div class="field-group">
-                <label for="newProductName">Product name / பொருள் பெயர்</label>
-                <input id="newProductName" type="text" placeholder="e.g. கடுகு எண்ணெய்" autocomplete="off">
-              </div>
+          <div class="product-stat-pill">
+            <div class="stat-icon-wrap" style="background:rgba(229,168,59,0.16);color:var(--amber)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </div>
+            <div>
+              <span class="stat-value" id="statServiceCount">0</span>
+              <span class="stat-caption">Service Milling (அரவை கூலி)</span>
+            </div>
+          </div>
 
-              <div class="field-grid">
-                <div class="field-group">
-                  <label for="newProductCategory">Category</label>
-                  <select id="newProductCategory">
-                    <option value="sales">Sales</option>
-                    <option value="service">Service</option>
-                  </select>
-                </div>
-                <div class="field-group">
-                  <label for="newProductUnit">Unit / அலகு</label>
-                  <select id="newProductUnit">
-                    <option value="kg">kg</option>
-                    <option value="liter">liter</option>
-                    <option value="piece">piece</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="field-group">
-                <label for="newProductRate">Current price / விலை</label>
-                <input id="newProductRate" type="number" min="0" step="0.01" placeholder="0.00">
-              </div>
-
-              <button type="button" class="btn btn-primary" id="addProductBtn" style="width:100%;margin-top:0.4rem">Add product</button>
-              <p class="form-message" id="productFormMessage" aria-live="polite"></p>
-            </form>
-          </section>
-
-          <!-- CATALOGUE -->
-          <section class="card" aria-labelledby="product-list-title">
-            <p class="card-title">Catalogue</p>
-            <h2 id="product-list-title" style="margin-bottom:1.1rem">Current products</h2>
-
-            <p class="group-label">Sales &middot; விற்பனை</p>
-            <div id="salesProductList" class="list-stack" style="margin-bottom:1.3rem"></div>
-
-            <p class="group-label">Service &middot; அரவை கூலி</p>
-            <div id="serviceProductList" class="list-stack"></div>
-          </section>
-
+          <div class="product-stat-pill">
+            <div class="stat-icon-wrap" style="background:rgba(42,111,151,0.14);color:var(--sky)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div>
+              <span class="stat-value" id="statTeamCount">0</span>
+              <span class="stat-caption">Team Staff Accounts / பணியாளர்</span>
+            </div>
+          </div>
         </div>
 
-        <div class="billing-layout" style="margin-top:1.1rem">
+        <!-- MAIN BALANCED 2-COLUMN GRID -->
+        <div class="products-grid-layout">
 
-          <!-- STAFF INVITATION / JOIN INFO -->
-          <section class="card form-card" aria-labelledby="staff-invite-title">
-            <p class="card-title">Staff Access &middot; பணியாளர் இணைப்பு</p>
-            <h2 id="staff-invite-title" style="margin-bottom:0.75rem">Unique Mill Code</h2>
-            
-            <p style="color:var(--muted);font-size:0.86rem;line-height:1.5;margin-bottom:1.1rem">
-              Staff create their own accounts during sign up. Share your unique code with staff members so they can join your mill.
-            </p>
-
-            <div class="mill-code-card">
-              <span class="mill-code-label">YOUR MILL CODE / ஆலை குறியீடு</span>
-              <div class="mill-code-row">
-                <code class="mill-code-value" id="ownerMillCodeDisplay">OWN-......</code>
-                <button type="button" class="btn btn-secondary btn-sm" id="btnCopyMillCode" title="Copy code">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                  <span id="copyMillCodeText">Copy / நகலெடு</span>
-                </button>
+          <!-- LEFT SIDEBAR: Sticky Action & Access Panel -->
+          <div class="products-sidebar-col">
+            <!-- ADD PRODUCT FORM -->
+            <section class="card form-card" aria-labelledby="add-product-title">
+              <div class="card-header-compact">
+                <span class="card-title">New product</span>
+                <span class="badge badge-green-soft">+ Add item</span>
               </div>
-            </div>
+              <h2 id="add-product-title" style="margin-bottom:0.9rem;font-size:1.15rem">Add product / புதிய பொருள்</h2>
 
-            <div class="staff-join-steps">
-              <h4 style="font-size:0.82rem;font-weight:700;letter-spacing:0.02em;margin-bottom:0.45rem;color:var(--ink)">
-                How staff join your mill / பணியாளர்கள் இணையும் முறை:
-              </h4>
-              <ol style="margin:0;padding-left:1.2rem;color:var(--muted);font-size:0.83rem;line-height:1.65">
-                <li>Staff go to the <strong>Sign Up / பதிவு செய்க</strong> tab on the login page.</li>
-                <li>Select <strong>Staff / பணியாளர்</strong>.</li>
-                <li>Enter your <strong>Unique Mill Code</strong> shown above.</li>
-                <li>Fill in their username &amp; password &mdash; their account joins your mill automatically!</li>
-              </ol>
-            </div>
+              <form id="newProductForm" novalidate>
+                <div class="field-group">
+                  <label for="newProductName">Product name / பொருள் பெயர்</label>
+                  <input id="newProductName" type="text" placeholder="e.g. கடுகு எண்ணெய் / கோதுமை" autocomplete="off">
+                </div>
 
-            <p class="form-message" id="userFormMessage" aria-live="polite" style="margin-top:0.75rem"></p>
-          </section>
+                <div class="field-grid">
+                  <div class="field-group">
+                    <label for="newProductCategory">Category / வகை</label>
+                    <select id="newProductCategory">
+                      <option value="sales">Sales (விற்பனை)</option>
+                      <option value="service">Service (அரைவை)</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <label for="newProductUnit">Unit / அலகு</label>
+                    <select id="newProductUnit">
+                      <option value="kg">kg (கிலோ)</option>
+                      <option value="liter">liter (லிட்டர்)</option>
+                      <option value="piece">piece (எண்ணிக்கை)</option>
+                    </select>
+                  </div>
+                </div>
 
-          <!-- TEAM -->
-          <section class="card" aria-labelledby="account-list-title">
-            <p class="card-title">Team</p>
-            <h2 id="account-list-title" style="margin-bottom:1.1rem">Who can sign in</h2>
-            <div id="userListBody" class="list-stack"></div>
-          </section>
+                <div class="field-group">
+                  <label for="newProductRate">Current price / விலை (₹)</label>
+                  <div class="input-currency-wrapper">
+                    <span class="input-currency-prefix">₹</span>
+                    <input id="newProductRate" type="number" min="0" step="0.01" placeholder="0.00" class="input-currency">
+                  </div>
+                </div>
+
+                <button type="button" class="btn btn-primary" id="addProductBtn" style="width:100%;margin-top:0.4rem;display:flex;align-items:center;justify-content:center;gap:0.5rem">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  <span>Add product / பொருள் சேர்</span>
+                </button>
+                <p class="form-message" id="productFormMessage" aria-live="polite"></p>
+              </form>
+            </section>
+
+            <!-- STAFF INVITATION / MILL CODE -->
+            <section class="card form-card" aria-labelledby="staff-invite-title">
+              <div class="card-header-compact">
+                <span class="card-title">Staff Access</span>
+                <span class="badge">Mill Code</span>
+              </div>
+              <h2 id="staff-invite-title" style="margin-bottom:0.5rem;font-size:1.15rem">Unique Mill Code</h2>
+              
+              <p style="color:var(--muted);font-size:0.84rem;line-height:1.45;margin-bottom:0.9rem">
+                Staff create their own accounts during sign up. Share this code so they join your mill.
+              </p>
+
+              <div class="mill-code-card">
+                <span class="mill-code-label">YOUR MILL CODE / ஆலை குறியீடு</span>
+                <div class="mill-code-row">
+                  <code class="mill-code-value" id="ownerMillCodeDisplay">OWN-......</code>
+                  <button type="button" class="btn btn-secondary btn-sm" id="btnCopyMillCode" title="Copy code">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span id="copyMillCodeText">Copy / நகலெடு</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="staff-join-steps">
+                <h4 style="font-size:0.8rem;font-weight:700;letter-spacing:0.02em;margin-bottom:0.4rem;color:var(--ink)">
+                  How staff join your mill / பணியாளர்கள் இணையும் முறை:
+                </h4>
+                <ol style="margin:0;padding-left:1.1rem;color:var(--muted);font-size:0.81rem;line-height:1.6">
+                  <li>Go to <strong>Sign Up / பதிவு செய்க</strong> tab on the login page.</li>
+                  <li>Select <strong>Staff / பணியாளர்</strong>.</li>
+                  <li>Enter your <strong>Unique Mill Code</strong> shown above.</li>
+                  <li>Fill in their username &amp; password &mdash; their account joins your mill automatically!</li>
+                </ol>
+              </div>
+
+              <p class="form-message" id="userFormMessage" aria-live="polite" style="margin-top:0.6rem"></p>
+            </section>
+          </div>
+
+          <!-- RIGHT MAIN COLUMN: Catalogue & Team Grid -->
+          <div class="products-main-col">
+            <!-- CATALOGUE -->
+            <section class="card" aria-labelledby="product-list-title">
+              <div class="catalogue-top-row">
+                <div>
+                  <p class="card-title">Catalogue / பட்டியல்</p>
+                  <h2 id="product-list-title">Current products</h2>
+                </div>
+                <!-- Search & Filters -->
+                <div class="catalogue-controls">
+                  <div class="search-box-wrap">
+                    <svg class="search-ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="productSearchInput" placeholder="Filter products / தேடுக..." autocomplete="off">
+                  </div>
+                  <div class="filter-pill-group" role="tablist">
+                    <button type="button" class="filter-pill-btn active" data-filter="all">All (<span id="filterAllCount">0</span>)</button>
+                    <button type="button" class="filter-pill-btn" data-filter="sales">Sales (<span id="filterSalesCount">0</span>)</button>
+                    <button type="button" class="filter-pill-btn" data-filter="service">Service (<span id="filterServiceCount">0</span>)</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SALES GROUP -->
+              <div class="catalogue-section-group" id="salesGroupWrap">
+                <div class="catalogue-group-heading">
+                  <div class="group-title-badge">
+                    <span class="group-dot dot-sales"></span>
+                    <span class="group-title-text">Sales &middot; விற்பனை பொருட்கள்</span>
+                  </div>
+                  <span class="group-badge-count" id="salesBadgeCount">0 items</span>
+                </div>
+                <div id="salesProductList" class="product-cards-grid"></div>
+              </div>
+
+              <!-- SERVICE GROUP -->
+              <div class="catalogue-section-group" id="serviceGroupWrap" style="margin-top:1.8rem">
+                <div class="catalogue-group-heading">
+                  <div class="group-title-badge">
+                    <span class="group-dot dot-service"></span>
+                    <span class="group-title-text">Service &middot; அரவை கூலி</span>
+                  </div>
+                  <span class="group-badge-count" id="serviceBadgeCount">0 services</span>
+                </div>
+                <div id="serviceProductList" class="product-cards-grid"></div>
+              </div>
+            </section>
+
+            <!-- TEAM ACCOUNTS -->
+            <section class="card" aria-labelledby="account-list-title">
+              <div class="catalogue-top-row">
+                <div>
+                  <p class="card-title">Team Accounts</p>
+                  <h2 id="account-list-title">Who can sign in</h2>
+                </div>
+                <span class="badge badge-team" id="teamCountBadge">Authorized Staff</span>
+              </div>
+              <div id="userListBody" class="user-cards-grid"></div>
+            </section>
+          </div>
 
         </div>
       </main>
     </div>
   </div>
 
-  <script src="auth.js" defer></script>
-  <script src="products.js" defer></script>
+  <script src="auth.js?v=2.4" defer></script>
+  <script src="products.js?v=2.4" defer></script>
 </body>
 </html>

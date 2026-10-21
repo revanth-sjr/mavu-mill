@@ -5,6 +5,8 @@ const ctrl = require('../controllers/auth.controller');
 
 router.post('/login', ctrl.login);
 router.post('/signup', ctrl.signup);
+router.post('/otp/send', ctrl.sendEmailOtp);
+router.post('/otp/verify', ctrl.verifyEmailOtp);
 router.get('/google/config', ctrl.getGoogleConfig);
 router.post('/google', ctrl.googleAuth);
 router.get('/me', authenticate, ctrl.me);

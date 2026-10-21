@@ -161,6 +161,7 @@ async function ensureSchema() {
       ready_by       DATETIME NOT NULL,
       status         ENUM('pending', 'completed', 'billed', 'cancelled') NOT NULL DEFAULT 'pending',
       notes          VARCHAR(255) NULL,
+      reminder_sent_at DATETIME NULL,
       order_id       INT NULL,
       created_by     INT NULL,
       created_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -170,6 +171,17 @@ async function ensureSchema() {
       FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
       FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL,
       FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS email_otps (
+      id          INT AUTO_INCREMENT PRIMARY KEY,
+      email       VARCHAR(150) NOT NULL,
+      otp_code    VARCHAR(20)  NOT NULL,
+      expires_at  DATETIME NOT NULL,
+      created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_email_expires (email, expires_at)
     )
   `);
 }
@@ -288,6 +300,56 @@ async function ensureMigrations() {
     }
   } catch (err) {
     console.warn('Migration warning (users.avatar_url):', err.message);
+  }
+
+  // 7. Ensure email column exists in users table
+  try {
+    const [emCols] = await pool.query(`SHOW COLUMNS FROM users LIKE 'email'`);
+    if (emCols.length === 0) {
+      console.log('Migrating: adding users.email ...');
+      await pool.query('ALTER TABLE users ADD COLUMN email VARCHAR(150) NULL AFTER name');
+    }
+    await pool.query("UPDATE users SET email = username WHERE username LIKE '%@%' AND (email IS NULL OR email = '')");
+  } catch (err) {
+    console.warn('Migration warning (users.email):', err.message);
+  }
+
+  // 8. Ensure email_otps table exists
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS email_otps (
+        id          INT AUTO_INCREMENT PRIMARY KEY,
+        email       VARCHAR(150) NOT NULL,
+        otp_code    VARCHAR(20)  NOT NULL,
+        expires_at  DATETIME NOT NULL,
+        created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_email_expires (email, expires_at)
+      )
+    `);
+  } catch (err) {
+    console.warn('Migration warning (email_otps):', err.message);
+  }
+
+  // 9. Ensure email column exists in customers table
+  try {
+    const [cEmailCols] = await pool.query(`SHOW COLUMNS FROM customers LIKE 'email'`);
+    if (cEmailCols.length === 0) {
+      console.log('Migrating: adding customers.email ...');
+      await pool.query('ALTER TABLE customers ADD COLUMN email VARCHAR(150) NULL AFTER phone');
+    }
+  } catch (err) {
+    console.warn('Migration warning (customers.email):', err.message);
+  }
+
+  // 10. Ensure reminder_sent_at exists in service_tasks table
+  try {
+    const [remCols] = await pool.query(`SHOW COLUMNS FROM service_tasks LIKE 'reminder_sent_at'`);
+    if (remCols.length === 0) {
+      console.log('Migrating: adding service_tasks.reminder_sent_at ...');
+      await pool.query('ALTER TABLE service_tasks ADD COLUMN reminder_sent_at DATETIME NULL AFTER notes');
+    }
+  } catch (err) {
+    console.warn('Migration warning (service_tasks.reminder_sent_at):', err.message);
   }
 }
 

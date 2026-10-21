@@ -14,6 +14,9 @@ let searchQuery = '';
 let taskCountdownInterval = null;
 let taskPollInterval = null;
 let activeModalOrder = null;
+let activeModalTask = null;
+
+const WHATSAPP_SVG_ICON = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;margin-right:4px;"><path d="M20.52 3.48A11.93 11.93 0 0 0 12.05 0C5.46 0 .1 5.36.1 11.95c0 2.1.55 4.15 1.6 5.96L0 24l6.26-1.64a11.9 11.9 0 0 0 5.79 1.49h.01c6.59 0 11.95-5.36 11.95-11.95 0-3.19-1.24-6.19-3.49-8.42zm-8.47 18.3h-.01a9.9 9.9 0 0 1-5.04-1.38l-.36-.22-3.74.98 1-3.65-.24-.38a9.86 9.86 0 0 1-1.52-5.18c0-5.48 4.46-9.94 9.95-9.94 2.65 0 5.15 1.03 7.02 2.91a9.88 9.88 0 0 1 2.91 7.03c0 5.48-4.46 9.94-9.96 9.94zm5.46-7.46c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.95 1.17-.17.2-.35.22-.65.07-.3-.15-1.27-.47-2.42-1.5a8.97 8.97 0 0 1-1.67-2.08c-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.18.2-.3.3-.5.1-.2.05-.38-.02-.53-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.87 1.22 3.07c.15.2 2.1 3.2 5.09 4.49.71.31 1.27.49 1.7.63.72.23 1.37.2 1.88.12.58-.09 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.13-.27-.2-.57-.35z"/></svg>`;
 
 // ── Formatters ────────────────────────────────────────────────
 function fmt(v) {
@@ -39,7 +42,7 @@ function getCountdownBadge(task) {
     return `<span class="task-badge-pill badge-completed"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;"><polyline points="20 6 9 17 4 12"/></svg> Ready for pickup / தயார்</span>`;
   }
   if (task.status === 'billed') {
-    return `<span class="task-badge-pill badge-billed">🧾 Billed &amp; Delivered</span>`;
+    return `<span class="task-badge-pill badge-billed"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Billed &amp; Delivered</span>`;
   }
   if (task.status === 'cancelled') {
     return `<span class="task-badge-pill badge-cancelled">Cancelled</span>`;
@@ -56,16 +59,16 @@ function getCountdownBadge(task) {
     const hrs = Math.floor(overdueMins / 60);
     const mins = overdueMins % 60;
     const timeStr = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
-    return `<span class="task-badge-pill badge-overdue">⚠️ Overdue by ${timeStr} (${formatTimeOnly(task.readyBy)})</span>`;
+    return `<span class="task-badge-pill badge-overdue"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Overdue by ${timeStr} (${formatTimeOnly(task.readyBy)})</span>`;
   } else if (diffMins === 0) {
-    return `<span class="task-badge-pill badge-urgent">🔥 Due now (${formatTimeOnly(task.readyBy)})</span>`;
+    return `<span class="task-badge-pill badge-urgent"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Due now (${formatTimeOnly(task.readyBy)})</span>`;
   } else if (diffMins <= 30) {
-    return `<span class="task-badge-pill badge-warning">⏳ Due in ${diffMins}m (${formatTimeOnly(task.readyBy)})</span>`;
+    return `<span class="task-badge-pill badge-warning"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Due in ${diffMins}m (${formatTimeOnly(task.readyBy)})</span>`;
   } else {
     const hrs = Math.floor(diffMins / 60);
     const mins = diffMins % 60;
     const durStr = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
-    return `<span class="task-badge-pill badge-pending">⏱️ Ready by ${formatTimeOnly(task.readyBy)} (in ${durStr})</span>`;
+    return `<span class="task-badge-pill badge-pending"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12"/></svg> Ready by ${formatTimeOnly(task.readyBy)} (in ${durStr})</span>`;
   }
 }
 
@@ -226,7 +229,7 @@ function renderTasksList(tasks) {
   if (currentCategory === 'all' || currentCategory === 'service') {
     html += renderFlashCardSection({
       type: 'service',
-      icon: '🌾',
+      icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 4.9V17L12 22l-9-5V6.9L12 2z"/><path d="M12 22V12"/><path d="M12 12L2.7 7.3"/><path d="M12 12l9.3-4.7"/></svg>',
       title: 'Service Tasks — Milling & Grinding',
       subtitleTa: 'அரைவை பணிகள்',
       description: 'Grain milling, flour grinding & oil pressing work orders with bag tokens and ready countdowns.',
@@ -238,7 +241,7 @@ function renderTasksList(tasks) {
   if (currentCategory === 'all' || currentCategory === 'sales') {
     html += renderFlashCardSection({
       type: 'sales',
-      icon: '📦',
+      icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>',
       title: 'Sales Orders — Counter & Pre-Orders',
       subtitleTa: 'விற்பனை ஆர்டர்கள்',
       description: 'Packaged oils, flours, grains & counter hold takeaway orders waiting for collection.',
@@ -259,7 +262,10 @@ function renderFlashCardSection(section) {
   if (!tasks.length) {
     bodyHtml = `
       <div class="flash-empty-card card">
-        <span class="empty-icon">${isService ? '🌾' : '📦'}</span>
+        <span class="empty-icon">${isService
+          ? '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 4.9V17L12 22l-9-5V6.9L12 2z"/><path d="M12 22V12"/><path d="M12 12L2.7 7.3"/><path d="M12 12l9.3-4.7"/></svg>'
+          : '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>'
+        }</span>
         <div>
           <p class="empty-title">No ${isService ? 'Service' : 'Sales'} tasks right now</p>
           <p class="empty-desc">${isService ? 'No grains or oil seeds currently being processed.' : 'No counter pre-orders or hold packages in queue.'}</p>
@@ -301,7 +307,10 @@ function renderFlashCard(task) {
   const isBilled    = task.status === 'billed';
   const isSales     = task.category === 'sales';
 
-  const categoryLabel = isSales ? '📦 Sales / விற்பனை' : '🌾 Service / அரைவை';
+  const categoryLabel = isSales ? 'Sales / விற்பனை' : 'Service / அரைவை';
+  const categoryIco = isSales
+    ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>'
+    : '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px"><path d="M12 2l9 4.9V17L12 22l-9-5V6.9L12 2z"/><path d="M12 22V12"/><path d="M12 12L2.7 7.3"/><path d="M12 12l9.3-4.7"/></svg>';
   const categoryTagClass = isSales ? 'cat-tag-sales' : 'cat-tag-service';
   const avatarBg = isSales ? 'var(--sky)' : 'var(--mill)';
 
@@ -311,9 +320,12 @@ function renderFlashCard(task) {
       <!-- CARD HEADER: Token & Status -->
       <div class="task-card-header">
         <div class="task-token-wrap">
-          <span class="task-category-tag ${categoryTagClass}">${categoryLabel}</span>
+          <span class="task-category-tag ${categoryTagClass}">${categoryIco}${categoryLabel}</span>
           <span class="task-token-tag">
-            <span class="token-icon">${isSales ? '🧾' : '🏷️'}</span>
+            <span class="token-icon">${isSales
+              ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'
+              : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/></svg>'
+            }</span>
             <strong>${escapeHtml(task.tokenNo)}</strong>
           </span>
         </div>
@@ -330,19 +342,22 @@ function renderFlashCard(task) {
           </div>
           <div class="task-cust-info">
             <strong class="task-cust-name">${escapeHtml(task.customerName)}</strong>
-            ${task.phone ? `<a href="tel:${escapeHtml(task.phone)}" class="task-cust-phone">📞 ${escapeHtml(task.phone)}</a>` : '<span class="task-cust-no-phone">No phone registered</span>'}
+            ${task.phone ? `<a href="tel:${escapeHtml(task.phone)}" class="task-cust-phone"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${escapeHtml(task.phone)}</a>` : '<span class="task-cust-no-phone">No phone registered</span>'}
           </div>
         </div>
 
         <div class="task-product-box ${isSales ? 'product-box-sales' : 'product-box-service'}">
           <div class="task-product-title">
-            <span class="product-name-txt">${isSales ? '📦' : '🌾'} ${escapeHtml(task.productName)}</span>
+            <span class="product-name-txt">${isSales
+              ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:4px"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>'
+              : '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:4px"><path d="M12 2l9 4.9V17L12 22l-9-5V6.9L12 2z"/><path d="M12 22V12"/><path d="M12 12L2.7 7.3"/><path d="M12 12l9.3-4.7"/></svg>'
+            }${escapeHtml(task.productName)}</span>
             <strong class="task-product-total">${fmt(task.total)}</strong>
           </div>
           <div class="task-product-meta">
             <span>Quantity: <strong>${Number(task.quantity).toFixed(2)} ${escapeHtml(task.unit)}</strong> @ ${fmt(task.rate)}/${task.unit}</span>
           </div>
-          ${task.notes ? `<div class="task-notes-callout">📝 <strong>Note:</strong> ${escapeHtml(task.notes)}</div>` : ''}
+          ${task.notes ? `<div class="task-notes-callout"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><strong>Note:</strong> ${escapeHtml(task.notes)}</div>` : ''}
         </div>
 
         <div class="task-timing-grid">
@@ -357,7 +372,16 @@ function renderFlashCard(task) {
           ${task.completedAt ? `
             <div class="timing-item" style="grid-column: span 2;">
               <span class="timing-label">Finished ready:</span>
-              <span class="timing-val" style="color:var(--sprout)">✓ Completed at ${formatTimeOnly(task.completedAt)}</span>
+              <span class="timing-val" style="color:var(--sprout)">Completed at ${formatTimeOnly(task.completedAt)}</span>
+            </div>
+          ` : ''}
+          ${task.reminderSentAt ? `
+            <div class="timing-item" style="grid-column: span 2;">
+              <span class="timing-label">WhatsApp alert:</span>
+              <span class="timing-val" style="color:var(--forest,#1a5c37);font-weight:600;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;margin-right:3px;"><path d="M20.52 3.48A11.93 11.93 0 0 0 12.05 0C5.46 0 .1 5.36.1 11.95c0 2.1.55 4.15 1.6 5.96L0 24l6.26-1.64a11.9 11.9 0 0 0 5.79 1.49h.01c6.59 0 11.95-5.36 11.95-11.95 0-3.19-1.24-6.19-3.49-8.42zm-8.47 18.3h-.01a9.9 9.9 0 0 1-5.04-1.38l-.36-.22-3.74.98 1-3.65-.24-.38a9.86 9.86 0 0 1-1.52-5.18c0-5.48 4.46-9.94 9.95-9.94 2.65 0 5.15 1.03 7.02 2.91a9.88 9.88 0 0 1 2.91 7.03c0 5.48-4.46 9.94-9.96 9.94zm5.46-7.46c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.95 1.17-.17.2-.35.22-.65.07-.3-.15-1.27-.47-2.42-1.5a8.97 8.97 0 0 1-1.67-2.08c-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.18.2-.3.3-.5.1-.2.05-.38-.02-.53-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.87 1.22 3.07c.15.2 2.1 3.2 5.09 4.49.71.31 1.27.49 1.7.63.72.23 1.37.2 1.88.12.58-.09 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.13-.27-.2-.57-.35z"/></svg>
+                Alert sent at ${formatTimeOnly(task.reminderSentAt)}
+              </span>
             </div>
           ` : ''}
         </div>
@@ -372,7 +396,11 @@ function renderFlashCard(task) {
               Mark as Completed / முடிந்தது
             </button>
             <button type="button" class="btn btn-secondary btn-slip" onclick="openTokenSlip(${task.id})" title="Print Drop-off Bag Token Slip">
-              🏷️ Slip
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/></svg>Slip
+            </button>
+            <button type="button" class="btn btn-whatsapp-remind" onclick="sendWhatsAppReminder(${task.id}, 'intake')" title="Send WhatsApp token slip to customer">
+              ${WHATSAPP_SVG_ICON}
+              Token
             </button>
             <button type="button" class="btn-task-cancel" onclick="cancelTask(${task.id})" title="Cancel Task">
               &times;
@@ -384,14 +412,22 @@ function renderFlashCard(task) {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
               Generate Bill &amp; Deliver / பில் போடு
             </button>
+            <button type="button" class="btn btn-whatsapp-remind" onclick="sendWhatsAppReminder(${task.id}, 'ready')" title="Send WhatsApp pickup ready alert / நினைவூட்டல்">
+              ${WHATSAPP_SVG_ICON}
+              ${task.reminderSentAt ? 'Remind Again' : 'Remind / நினைவூட்டல்'}
+            </button>
             <button type="button" class="btn btn-secondary" onclick="revertToPending(${task.id})" title="Move back to in-progress">
-              ↩ Revert
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>Revert
             </button>
           ` : ''}
 
           ${isBilled ? `
             <button type="button" class="btn btn-secondary" onclick="viewBilledReceipt(${task.id})">
-              🧾 View Receipt / பில் பார்க்க
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>View Receipt / பில் பார்க்க
+            </button>
+            <button type="button" class="btn btn-whatsapp-remind" onclick="sendWhatsAppReminder(${task.id}, 'receipt')" title="Send WhatsApp digital bill receipt / ரசீது">
+              ${WHATSAPP_SVG_ICON}
+              WhatsApp Bill
             </button>
           ` : ''}
         </div>
@@ -503,12 +539,58 @@ async function cancelTask(id) {
   }
 }
 
+// 5. Send WhatsApp Reminder (Pickup ready, intake slip, or billed receipt)
+async function sendWhatsAppReminder(taskId, reminderType = 'ready') {
+  const task = allTasks.find(t => t.id === taskId);
+  if (!task) {
+    showToast('Task not found / பணி கிடைக்கவில்லை.', true);
+    return;
+  }
+
+  let phone = (task.phone || '').trim();
+  if (!phone) {
+    const inputPhone = prompt('Enter customer WhatsApp mobile number / வாடிக்கையாளர் வாட்ஸ்அப் எண் (10 digits):');
+    if (!inputPhone || !inputPhone.trim()) {
+      showToast('Phone number is required to send WhatsApp reminder.', true);
+      return;
+    }
+    phone = inputPhone.trim();
+  }
+
+  showToast('Preparing WhatsApp reminder...');
+
+  try {
+    const res = await apiFetch(`/tasks/${taskId}/remind`, {
+      method: 'POST',
+      body: JSON.stringify({ phone, reminderType })
+    });
+
+    if (res.whatsappUrl) {
+      window.open(res.whatsappUrl, '_blank');
+      showToast('✓ WhatsApp opened with message / நினைவூட்டல் தயார்!');
+    } else {
+      showToast('✓ Reminder recorded successfully!');
+    }
+
+    if (res.emailSent) {
+      showToast('✓ Email notice also delivered to customer!');
+    }
+
+    // Refresh tasks to display updated reminder time
+    await loadTasks(true);
+  } catch (err) {
+    console.error('Reminder error:', err);
+    showToast('Could not send reminder: ' + err.message, true);
+  }
+}
+
 // ── Modals & Slip Printing ────────────────────────────────────
 
 // A. Bag Intake Token Slip
 function openTokenSlip(id) {
   const task = allTasks.find(t => t.id === id);
   if (!task) return;
+  activeModalTask = task;
 
   const isSales = task.category === 'sales';
   const prefix = isSales ? 'Order #' : 'Bag #';
@@ -580,6 +662,7 @@ async function viewBilledReceipt(taskId) {
     showToast('Order details not found.', true);
     return;
   }
+  activeModalTask = task;
   try {
     const ordersRes = await apiFetch('/orders');
     const order = ordersRes.orders?.find(o => o.id === task.orderId);
@@ -649,6 +732,37 @@ function setupEventListeners() {
   // 7. Print billed receipt button
   document.getElementById('btnPrintBilledReceipt')?.addEventListener('click', () => {
     window.print();
+  });
+
+  // 8. WhatsApp Modal action buttons
+  document.getElementById('btnWhatsAppTokenSlip')?.addEventListener('click', () => {
+    if (activeModalTask) {
+      sendWhatsAppReminder(activeModalTask.id, 'intake');
+    }
+  });
+
+  document.getElementById('btnWhatsAppBilledReceipt')?.addEventListener('click', () => {
+    if (activeModalTask) {
+      sendWhatsAppReminder(activeModalTask.id, 'receipt');
+    } else if (activeModalOrder) {
+      const linkedTask = allTasks.find(t => t.orderId === activeModalOrder.id);
+      if (linkedTask) {
+        sendWhatsAppReminder(linkedTask.id, 'receipt');
+      } else {
+        let phoneDigits = (activeModalOrder.phone || '').replace(/\D/g, '');
+        if (phoneDigits.length === 10) phoneDigits = '91' + phoneDigits;
+        if (!phoneDigits) {
+          const inp = prompt('Enter customer phone number / வாடிக்கையாளர் எண்:');
+          if (inp) phoneDigits = inp.replace(/\D/g, '');
+          if (phoneDigits.length === 10) phoneDigits = '91' + phoneDigits;
+        }
+        if (phoneDigits) {
+          const msg = `*சக்தி எண்ணெய் மற்றும் மாவு ஆலை*\n*Sakthi Oil & Flour Mill*\n--------------------------------\nவணக்கம் *${activeModalOrder.name}*!\n\nபில் ரசீது விவரம் / Bill Receipt:\n[பொருள் / Item]: ${activeModalOrder.product}\n[அளவு / Qty]: ${activeModalOrder.quantity} ${activeModalOrder.unit}\n[கட்டணம் / Total]: ₹${activeModalOrder.total}\n\nநன்றி, மீண்டும் வருக! / Thank you, visit again!`;
+          window.open(`https://wa.me/${phoneDigits}?text=${encodeURIComponent(msg)}`, '_blank');
+          showToast('✓ WhatsApp bill receipt opened!');
+        }
+      }
+    }
   });
 }
 

@@ -9,6 +9,7 @@ router.get('/next-token', authenticate, ctrl.getNextToken);
 router.post('/', authenticate, ctrl.create);
 router.put('/:id/status', authenticate, ctrl.updateStatus);
 router.post('/:id/bill', authenticate, ctrl.billTask);
+router.post('/:id/remind', authenticate, ctrl.sendReminder);
 router.delete('/:id', authenticate, ctrl.remove);
 
 module.exports = router;

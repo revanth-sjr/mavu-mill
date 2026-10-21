@@ -7,6 +7,7 @@ const {
   signRefreshToken,
   verifyRefreshToken
 } = require('../utils/jwt');
+const { sendOtpEmail } = require('../utils/mailer');
 
 async function login(req, res) {
   const { username, password, rememberMe } = req.body || {};
@@ -492,6 +493,131 @@ async function googleAuth(req, res) {
   }
 }
 
+// ── Email OTP Login ──────────────────────────────────────────────
+async function sendEmailOtp(req, res) {
+  try {
+    const { email } = req.body || {};
+    if (!email || !email.trim()) {
+      return res.status(400).json({ message: 'Email address is required.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      return res.status(400).json({ message: 'Please enter a valid email address.' });
+    }
+
+    // Check if user exists
+    let user = null;
+    try {
+      const [rows] = await pool.query('SELECT * FROM users WHERE username = ? OR email = ?', [cleanEmail, cleanEmail]);
+      user = rows[0];
+    } catch (e) {
+      const [rows] = await pool.query('SELECT * FROM users WHERE username = ?', [cleanEmail]);
+      user = rows[0];
+    }
+
+    if (!user) {
+      return res.status(404).json({
+        message: 'No registered account found with this email. Please check your spelling or sign up first.'
+      });
+    }
+
+    // Rate limit: 60s cooldown between OTP requests for this email
+    const [recent] = await pool.query(
+      'SELECT created_at FROM email_otps WHERE email = ? AND created_at > DATE_SUB(NOW(), INTERVAL 60 SECOND)',
+      [cleanEmail]
+    );
+    if (recent.length > 0) {
+      return res.status(429).json({ message: 'Please wait 60 seconds before requesting another OTP / தயவுசெய்து 60 வினாடிகள் காத்திருக்கவும்.' });
+    }
+
+    // Generate secure 6-digit OTP
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Clear old OTPs for this email and insert new one
+    await pool.query('DELETE FROM email_otps WHERE email = ?', [cleanEmail]);
+    await pool.query(
+      'INSERT INTO email_otps (email, otp_code, expires_at) VALUES (?, ?, ?)',
+      [cleanEmail, otp, expiresAt]
+    );
+
+    // Send email
+    const result = await sendOtpEmail(cleanEmail, otp, user.name || user.username);
+
+    return res.json({
+      ok: true,
+      message: 'OTP has been sent to your email. Please check your inbox / உங்கள் மின்னஞ்சலுக்கு OTP அனுப்பப்பட்டுள்ளது.',
+      devMode: !!result.devMode,
+      devOtp: result.devOtp, // Only populated in dev mode if SMTP credentials are not yet set
+      expiresInMinutes: 10
+    });
+  } catch (err) {
+    console.error('sendEmailOtp error:', err);
+    return res.status(500).json({ message: 'Failed to send OTP: ' + err.message });
+  }
+}
+
+async function verifyEmailOtp(req, res) {
+  try {
+    const { email, otp, rememberMe } = req.body || {};
+    if (!email || !otp) {
+      return res.status(400).json({ message: 'Email and 6-digit OTP are required.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanOtp = String(otp).trim();
+
+    // Verify OTP in database
+    const [rows] = await pool.query(
+      'SELECT * FROM email_otps WHERE email = ? AND otp_code = ? AND expires_at > NOW() ORDER BY id DESC LIMIT 1',
+      [cleanEmail, cleanOtp]
+    );
+
+    if (!rows.length) {
+      return res.status(400).json({ message: 'Invalid or expired OTP. Please try again / தவறான அல்லது காலாவதியான OTP.' });
+    }
+
+    // Consume OTP so it cannot be reused
+    await pool.query('DELETE FROM email_otps WHERE email = ?', [cleanEmail]);
+
+    // Retrieve user details
+    let user = null;
+    try {
+      const [userRows] = await pool.query('SELECT * FROM users WHERE username = ? OR email = ?', [cleanEmail, cleanEmail]);
+      user = userRows[0];
+    } catch (e) {
+      const [userRows] = await pool.query('SELECT * FROM users WHERE username = ?', [cleanEmail]);
+      user = userRows[0];
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: 'Registered user account not found.' });
+    }
+
+    // Generate JWT access & refresh tokens
+    const accessToken = signAccessToken({ id: user.id });
+    const refreshToken = signRefreshToken({ id: user.id }, !!rememberMe);
+    const sanitizedUser = Object.assign({}, user);
+    delete sanitizedUser.password_hash;
+    sanitizedUser.uniqueCode = user.unique_code;
+
+    return res.json({
+      ok: true,
+      token: accessToken,
+      accessToken,
+      refreshToken,
+      user: sanitizedUser,
+      expiresIn: '15m',
+      message: `Welcome, ${sanitizedUser.name}! Signed in successfully.`
+    });
+  } catch (err) {
+    console.error('verifyEmailOtp error:', err);
+    return res.status(500).json({ message: 'OTP verification failed: ' + err.message });
+  }
+}
+
 module.exports = {
   login,
   signup,
@@ -504,5 +630,7 @@ module.exports = {
   register,
   deleteUser,
   getGoogleConfig,
-  googleAuth
+  googleAuth,
+  sendEmailOtp,
+  verifyEmailOtp
 };

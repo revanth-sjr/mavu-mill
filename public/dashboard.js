@@ -214,7 +214,7 @@ function renderTopCustomers(filtered) {
           <div class="customer-orders">${c.visits} orders</div>
         </div>
       </div>
-      <div class="customer-fav">⭐ Favourite: ${c.favProduct}</div>
+      <div class="customer-fav"><svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="1" style="vertical-align:-1px;margin-right:4px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Favourite: ${c.favProduct}</div>
     </div>`;
   }).join('');
 
@@ -273,7 +273,7 @@ function renderCustomerList() {
           <div class="customer-orders">${c.visits} orders · ${fmt(c.spent)}</div>
         </div>
       </div>
-      <div class="customer-fav">⭐ Favourite: ${c.favProduct}</div>
+      <div class="customer-fav"><svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="1" style="vertical-align:-1px;margin-right:4px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Favourite: ${c.favProduct}</div>
     </div>`;
   }).join('');
 
@@ -448,7 +448,7 @@ async function renderDashboard() {
 
 // ── Clear data (admin only — server also enforces this) ─────────
 async function clearAllData() {
-  if (!confirm('⚠️ This will permanently delete ALL orders and customer data.\n\nAre you sure?')) return;
+  if (!confirm('WARNING: This will permanently delete ALL orders and customer data.\n\nAre you sure?')) return;
   try {
     await apiFetch('/orders', { method: 'DELETE' });
     renderDashboard();

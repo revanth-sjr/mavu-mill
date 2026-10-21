@@ -247,6 +247,7 @@ p { margin: 0; }
   font-size: 0.62rem; font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.07em;
   font-family: var(--ui-face);
+  display: inline-flex; align-items: center; gap: 0.25rem;
 }
 .role-pill.role-admin { background: var(--forest); color: #fff; }
 .role-pill.role-staff { background: var(--wash); color: var(--mill); border: 1px solid var(--wash-deep); }
@@ -1050,6 +1051,7 @@ select option {
   margin-top: 0.5rem; padding-top: 0.5rem;
   border-top: 1px dashed var(--line);
   font-size: 0.76rem; color: var(--muted);
+  display: flex; align-items: center; gap: 0.25rem;
 }
 
 .customer-search-row {
@@ -2463,6 +2465,12 @@ select option {
 }
 .category-pill .cat-icon {
   font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.category-pill .cat-icon svg {
+  display: block;
 }
 .category-pill .cat-count {
   font-family: var(--mono-face);
@@ -2607,6 +2615,9 @@ select option {
   flex-shrink: 0;
   box-shadow: var(--sh-sm);
 }
+.flash-section-icon svg {
+  display: block;
+}
 .flash-section-service .flash-section-icon {
   background: linear-gradient(135deg, rgba(43, 168, 109, 0.18), rgba(43, 168, 109, 0.05));
   border: 1px solid rgba(43, 168, 109, 0.3);
@@ -2678,6 +2689,12 @@ select option {
 .flash-empty-card .empty-icon {
   font-size: 1.8rem;
   opacity: 0.6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.flash-empty-card .empty-icon svg {
+  display: block;
 }
 .flash-empty-card .empty-title {
   font-weight: 600;
@@ -2755,6 +2772,9 @@ select option {
   border-radius: var(--r-sm);
   text-transform: uppercase;
   letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 .cat-tag-service {
   background: var(--wash);
@@ -2996,6 +3016,50 @@ select option {
   background: var(--clay-wash);
 }
 
+/* WhatsApp Reminder & Slip Action Styles */
+.btn-whatsapp-remind {
+  background: #25D366;
+  color: #ffffff !important;
+  border: 1px solid #1eb857;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.46rem 0.75rem;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-size: 0.8rem;
+  flex: 0 0 auto !important;
+  text-decoration: none;
+}
+.btn-whatsapp-remind:hover {
+  background: #20ba59;
+  border-color: #1a9e4b;
+  box-shadow: 0 2px 8px rgba(37, 211, 102, 0.35);
+  transform: translateY(-1px);
+}
+[data-theme="dark"] .btn-whatsapp-remind {
+  background: #128C7E;
+  border-color: #075E54;
+  color: #eafff5 !important;
+}
+[data-theme="dark"] .btn-whatsapp-remind:hover {
+  background: #25D366;
+  color: #ffffff !important;
+}
+.badge-reminded {
+  background: rgba(37, 211, 102, 0.15);
+  color: #128c46;
+  border: 1px solid rgba(37, 211, 102, 0.35);
+}
+[data-theme="dark"] .badge-reminded {
+  background: rgba(37, 211, 102, 0.2);
+  color: #48e68b;
+  border-color: rgba(37, 211, 102, 0.4);
+}
+
 /* 6. Printable Drop-off Token Slip */
 .token-slip-modal-card {
   max-width: 380px;
@@ -3087,6 +3151,645 @@ select option {
     border: none;
     box-shadow: none;
   }
+}
+
+/* ============================================================
+   PRODUCTS & TEAM MANAGEMENT - MODERN REDESIGN
+   ============================================================ */
+
+/* Top Stats Overview Row */
+.products-stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.4rem;
+}
+
+.product-stat-pill {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 0.85rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  box-shadow: var(--sh-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.product-stat-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--sh);
+  border-color: var(--wash-deep);
+}
+
+.stat-icon-wrap {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.stat-value {
+  display: block;
+  font-family: var(--mono-face);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.stat-caption {
+  display: block;
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  margin-top: 2px;
+}
+
+/* Products Layout (2-Column Balanced Master-Detail Grid) */
+.products-grid-layout {
+  display: grid;
+  grid-template-columns: 370px minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.products-sidebar-col {
+  position: sticky;
+  top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.products-main-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+  min-width: 0;
+}
+
+.card-header-compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+}
+
+.badge-green-soft {
+  background: var(--wash);
+  color: var(--mill);
+  font-weight: 600;
+  border: 1px solid var(--wash-deep);
+  font-size: 0.72rem;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.badge-team {
+  background: rgba(42, 111, 151, 0.12);
+  color: var(--sky);
+  border: 1px solid rgba(42, 111, 151, 0.22);
+}
+
+/* Currency input prefix */
+.input-currency-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-currency-prefix {
+  position: absolute;
+  left: 0.85rem;
+  font-family: var(--mono-face);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--muted);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.input-currency {
+  padding-left: 2rem !important;
+}
+
+/* Catalogue Header & Controls */
+.catalogue-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 1.25rem;
+}
+
+.catalogue-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.search-box-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 220px;
+}
+
+.search-ico {
+  position: absolute;
+  left: 0.75rem;
+  color: var(--faint);
+  pointer-events: none;
+}
+
+.search-box-wrap input {
+  padding-left: 2.2rem !important;
+  min-height: 36px;
+  font-size: 0.85rem;
+  border-radius: var(--r-sm);
+}
+
+.filter-pill-group {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: var(--page);
+  padding: 3px;
+  border-radius: var(--r);
+  border: 1px solid var(--line);
+}
+
+.filter-pill-btn {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: var(--ui-face);
+}
+
+.filter-pill-btn:hover {
+  color: var(--ink);
+}
+
+.filter-pill-btn.active {
+  background: var(--paper);
+  color: var(--mill);
+  box-shadow: var(--sh-sm);
+  font-weight: 700;
+}
+
+/* Group headings */
+.catalogue-group-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+}
+
+.group-title-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.group-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot-sales { background: var(--sprout); }
+.dot-service { background: var(--amber); }
+
+.group-title-text {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+}
+
+.group-badge-count {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--page);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-family: var(--mono-face);
+}
+
+/* Product Cards Grid (Multi-column responsive grid) */
+.product-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+  gap: 0.85rem;
+}
+
+.product-card {
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r);
+  padding: 0.95rem 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.75rem;
+  box-shadow: var(--sh-sm);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.product-card:hover {
+  border-color: var(--sprout);
+  box-shadow: var(--sh);
+  transform: translateY(-2px);
+}
+
+.product-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.product-card-tags {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.product-cat-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.03em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.product-cat-tag.tag-sales {
+  background: var(--wash);
+  color: var(--mill);
+  border: 1px solid var(--wash-deep);
+}
+
+.product-cat-tag.tag-service {
+  background: var(--amber-wash);
+  color: var(--amber);
+  border: 1px solid #EEDBB2;
+}
+
+.product-unit-tag {
+  font-family: var(--mono-face);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--page);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+}
+
+.btn-card-del {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--faint);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.btn-card-del:hover {
+  background: var(--clay-wash);
+  color: var(--clay);
+  border-color: #E8BFB4;
+}
+
+.product-card-body {
+  flex: 1;
+}
+
+.product-card-body .product-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.35;
+  margin: 0;
+}
+
+.product-card-rate-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding-top: 0.65rem;
+  border-top: 1px dashed var(--line);
+}
+
+.rate-input-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.rate-input-field .rate-currency {
+  position: absolute;
+  left: 0.65rem;
+  font-family: var(--mono-face);
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--muted);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.rate-input-field .rate-edit-input {
+  width: 100%;
+  padding-left: 1.6rem !important;
+  min-height: 36px;
+  font-family: var(--mono-face);
+  font-weight: 600;
+  font-size: 0.92rem;
+  border-radius: var(--r-sm);
+}
+
+.product-card-rate-row .btn-save-rate {
+  min-height: 36px;
+  padding: 0 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  font-size: 0.78rem;
+  border-radius: var(--r-sm);
+}
+
+/* User / Team Cards Grid */
+.user-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.9rem;
+}
+
+.user-account-card {
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r);
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.85rem;
+  box-shadow: var(--sh-sm);
+  transition: all 0.18s ease;
+}
+
+.user-account-card:hover {
+  border-color: var(--wash-deep);
+  box-shadow: var(--sh);
+}
+
+.user-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+}
+
+.user-avatar-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(145deg, var(--wash), var(--wash-deep));
+  color: var(--mill);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+}
+
+.user-card-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-card-name {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.user-card-name strong {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-you-tag {
+  background: var(--wash);
+  color: var(--mill);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  border: 1px solid var(--wash-deep);
+}
+
+.user-card-username {
+  font-size: 0.78rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 3px;
+  flex-wrap: wrap;
+}
+
+.user-code-pill {
+  font-family: var(--mono-face);
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: var(--page);
+  border: 1px solid var(--line);
+  padding: 1px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+}
+
+.user-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+
+.user-card-actions.you-actions {
+  justify-content: center;
+}
+
+.current-user-notice {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 500;
+  font-style: italic;
+}
+
+.btn-user-action {
+  flex: 1;
+  min-height: 34px;
+  background: var(--page);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  border-radius: var(--r-sm);
+  font-size: 0.76rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: var(--ui-face);
+}
+
+.btn-user-action:hover {
+  background: var(--wash);
+  color: var(--mill);
+  border-color: var(--wash-deep);
+}
+
+.btn-user-del {
+  min-height: 34px;
+  padding: 0 0.75rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  border-radius: var(--r-sm);
+  font-size: 0.76rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: var(--ui-face);
+}
+
+.btn-user-del:hover {
+  background: var(--clay-wash);
+  color: var(--clay);
+  border-color: #E8BFB4;
+}
+
+/* Responsiveness */
+@media (max-width: 1060px) {
+  .products-grid-layout {
+    grid-template-columns: 1fr;
+  }
+  .products-sidebar-col {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .catalogue-top-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .catalogue-controls {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .search-box-wrap {
+    width: 100%;
+  }
+  .product-cards-grid {
+    grid-template-columns: 1fr;
+  }
+  .user-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Email OTP Login Styling ───────────────────────────── */
+.otp-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  background: var(--wash);
+  color: var(--forest);
+  border: 1px solid var(--wash-deep);
+  border-radius: var(--r-sm);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 1.1rem;
+}
+[data-theme="dark"] .otp-banner {
+  background: rgba(43, 168, 109, 0.15);
+  color: var(--sprout);
+  border-color: rgba(43, 168, 109, 0.3);
+}
+.otp-banner svg {
+  flex-shrink: 0;
+}
+.otp-sent-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: var(--page);
+  border: 1px dashed var(--line);
+  padding: 0.55rem 0.8rem;
+  border-radius: var(--r-sm);
+  font-size: 0.82rem;
+  color: var(--ink);
+}
+.otp-sent-notice strong {
+  color: var(--mill);
+}
+.btn-otp-mode {
+  background: var(--page);
+  border: 1.5px solid var(--line);
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 0.82rem;
+  transition: all 0.15s ease;
+}
+.btn-otp-mode:hover {
+  background: var(--wash);
+  border-color: var(--mill);
+  color: var(--mill);
 }
 
 
