@@ -374,7 +374,7 @@ async function googleAuth(req, res) {
           code,
           client_id: clientId,
           client_secret: clientSecret,
-          redirect_uri: redirectUri || 'https://mavu-mill-qladoau67-revanthsjr-7530.vercel.app/index.html',
+          redirect_uri: redirectUri || `${req.protocol}://${req.get('host')}/index.html`,
           grant_type: 'authorization_code'
         })
       });

@@ -1038,24 +1038,24 @@ const otpStepEmail = document.getElementById('otpStepEmail');
 const otpStepVerify = document.getElementById('otpStepVerify');
 const otpTargetEmail = document.getElementById('otpTargetEmail');
 const otpError = document.getElementById('otpError');
-let countdownInterval = null;
+let otpCountdownInterval = null;
 
 function startOtpCountdown(seconds = 60) {
-  if (countdownInterval) clearInterval(countdownInterval);
+  if (otpCountdownInterval) clearInterval(otpCountdownInterval);
   let remaining = seconds;
   if (btnResendOtp) {
     btnResendOtp.disabled = true;
     btnResendOtp.innerHTML = `Resend in <span id="otpCountdown">${remaining}</span>s`;
   }
 
-  countdownInterval = setInterval(() => {
+  otpCountdownInterval = setInterval(() => {
     remaining--;
     const counterSpan = document.getElementById('otpCountdown');
     if (counterSpan) counterSpan.textContent = remaining;
 
     if (remaining <= 0) {
-      clearInterval(countdownInterval);
-      countdownInterval = null;
+      clearInterval(otpCountdownInterval);
+      otpCountdownInterval = null;
       if (btnResendOtp) {
         btnResendOtp.disabled = false;
         btnResendOtp.textContent = 'Resend OTP / மீண்டும் அனுப்புக';
