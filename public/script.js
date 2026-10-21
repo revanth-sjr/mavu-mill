@@ -412,11 +412,17 @@ function openIntakeSlipModal(task) {
     notesRow.style.display = 'none';
   }
 
-  if (intakeSlipModal) intakeSlipModal.style.display = 'flex';
+  if (intakeSlipModal) {
+    intakeSlipModal.classList.add('open');
+    intakeSlipModal.style.display = 'flex';
+  }
 }
 
 function closeIntakeSlipModal() {
-  if (intakeSlipModal) intakeSlipModal.style.display = 'none';
+  if (intakeSlipModal) {
+    intakeSlipModal.classList.remove('open');
+    intakeSlipModal.style.display = 'none';
+  }
 }
 
 // ── Update track-customer label dynamically ───────────────────
@@ -732,6 +738,16 @@ if (btnNextToken) btnNextToken.addEventListener('click', loadNextToken);
 if (btnCloseIntakeModal) btnCloseIntakeModal.addEventListener('click', closeIntakeSlipModal);
 if (btnDismissIntakeModal) btnDismissIntakeModal.addEventListener('click', closeIntakeSlipModal);
 if (btnPrintIntakeSlip) btnPrintIntakeSlip.addEventListener('click', () => window.print());
+if (intakeSlipModal) {
+  intakeSlipModal.addEventListener('click', (e) => {
+    if (e.target.id === 'intakeSlipModal') closeIntakeSlipModal();
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && intakeSlipModal.style.display !== 'none') {
+      closeIntakeSlipModal();
+    }
+  });
+}
 
 // Quick Preset chips
 document.querySelectorAll('.preset-chip').forEach(chip => {

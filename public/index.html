@@ -305,11 +305,16 @@
   <div id="intakeSlipModal" class="modal-overlay" role="dialog" aria-modal="true" style="display:none;">
     <div class="modal-card token-slip-modal-card">
       <div class="modal-head">
-        <div>
-          <h3>Bag Intake Token / அரைவை பை டோக்கன்</h3>
-          <p class="modal-sub">Task saved! Attach to grain bag or give to customer</p>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <div class="modal-icon-badge info">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          </div>
+          <div>
+            <h3>Bag Intake Token / அரைவை பை டோக்கன்</h3>
+            <p class="modal-sub">Task saved! Attach to grain bag or give to customer</p>
+          </div>
         </div>
-        <button type="button" class="btn-close-modal" id="btnCloseIntakeModal">&times;</button>
+        <button type="button" class="btn-close-modal" id="btnCloseIntakeModal" title="Close / மூடு">&times;</button>
       </div>
 
       <div class="token-slip-print-area" id="intakeSlipPrintArea">
@@ -330,7 +335,7 @@
         <p class="slip-foot">Please present this token when collecting your flour/oil. நன்றி!</p>
       </div>
 
-      <div class="modal-actions" style="margin-top:1.2rem;display:flex;justify-content:space-between;align-items:center;">
+      <div class="modal-actions" style="justify-content:space-between;">
         <a href="tasks.html" class="btn btn-secondary" style="text-decoration:none;font-size:0.85rem;">View in Tasks / பணிகள் பக்கம்</a>
         <div style="display:flex;gap:0.5rem;">
           <button type="button" class="btn btn-secondary" id="btnDismissIntakeModal">Done</button>

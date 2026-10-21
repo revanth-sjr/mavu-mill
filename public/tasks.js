@@ -620,12 +620,18 @@ function openTokenSlip(id) {
   }
 
   const modal = document.getElementById('tokenSlipModal');
-  if (modal) modal.style.display = 'flex';
+  if (modal) {
+    modal.classList.add('open');
+    modal.style.display = 'flex';
+  }
 }
 
 function closeTokenSlipModal() {
   const modal = document.getElementById('tokenSlipModal');
-  if (modal) modal.style.display = 'none';
+  if (modal) {
+    modal.classList.remove('open');
+    modal.style.display = 'none';
+  }
 }
 
 // B. Billed Receipt Modal
@@ -648,12 +654,18 @@ function displayBilledReceiptModal(order) {
   document.getElementById('taskBillTotal').textContent = fmt(order.total);
 
   const modal = document.getElementById('billedReceiptModal');
-  if (modal) modal.style.display = 'flex';
+  if (modal) {
+    modal.classList.add('open');
+    modal.style.display = 'flex';
+  }
 }
 
 function closeBilledReceiptModal() {
   const modal = document.getElementById('billedReceiptModal');
-  if (modal) modal.style.display = 'none';
+  if (modal) {
+    modal.classList.remove('open');
+    modal.style.display = 'none';
+  }
 }
 
 async function viewBilledReceipt(taskId) {
@@ -723,6 +735,22 @@ function setupEventListeners() {
   document.getElementById('btnCancelTokenModal')?.addEventListener('click', closeTokenSlipModal);
   document.getElementById('btnCloseBilledModal')?.addEventListener('click', closeBilledReceiptModal);
   document.getElementById('btnDismissBilledModal')?.addEventListener('click', closeBilledReceiptModal);
+
+  // Modal backdrop click dismissal
+  document.getElementById('tokenSlipModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'tokenSlipModal') closeTokenSlipModal();
+  });
+  document.getElementById('billedReceiptModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'billedReceiptModal') closeBilledReceiptModal();
+  });
+
+  // ESC key dismissal
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeTokenSlipModal();
+      closeBilledReceiptModal();
+    }
+  });
 
   // 6. Print slip button
   document.getElementById('btnPrintTokenSlip')?.addEventListener('click', () => {
