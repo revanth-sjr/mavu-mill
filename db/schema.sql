@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS customers (
 
 CREATE TABLE IF NOT EXISTS orders (
   id            INT AUTO_INCREMENT PRIMARY KEY,
+  bill_no       VARCHAR(50)  NULL,
   customer_name VARCHAR(150) NOT NULL,
   customer_id   INT NULL,
   product_id    INT NULL,
@@ -44,6 +45,7 @@ CREATE TABLE IF NOT EXISTS orders (
   tracked       TINYINT(1) NOT NULL DEFAULT 1,
   created_by    INT NULL,
   order_date    DATETIME NOT NULL,
+  INDEX idx_orders_bill_no (bill_no),
   FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
   FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL

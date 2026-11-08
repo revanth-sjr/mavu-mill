@@ -298,11 +298,15 @@ async function billTask(req, res) {
     }
 
     // Insert into orders table
+    const tokenPart = task.token_no ? String(task.token_no).replace(/[^a-zA-Z0-9]/g, '') : null;
+    const initialBillNo = tokenPart ? `BILL-${tokenPart}` : null;
+
     const [orderResult] = await pool.query(
       `INSERT INTO orders
-         (customer_name, customer_id, product_id, product_name, unit, quantity, rate, total, custom_rate, tracked, created_by, order_date)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, NOW())`,
+         (bill_no, customer_name, customer_id, product_id, product_name, unit, quantity, rate, total, custom_rate, tracked, created_by, order_date)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, NOW())`,
       [
+        initialBillNo,
         task.customer_name,
         task.customer_id,
         task.product_id,
@@ -317,6 +321,10 @@ async function billTask(req, res) {
     );
 
     const orderId = orderResult.insertId;
+    const finalBillNo = initialBillNo || `BILL-${orderId}`;
+    if (!initialBillNo) {
+      await pool.query('UPDATE orders SET bill_no = ? WHERE id = ?', [finalBillNo, orderId]);
+    }
 
     // Update task to 'billed'
     await pool.query(
@@ -337,6 +345,7 @@ async function billTask(req, res) {
     const orderRow = newOrderRows[0];
     const serializedOrder = {
       id: orderRow.id,
+      billNo: orderRow.bill_no || finalBillNo,
       name: orderRow.customer_name,
       phone: orderRow.customer_phone || task.effective_phone || null,
       customerId: orderRow.customer_id,

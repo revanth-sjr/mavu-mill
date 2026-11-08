@@ -125,6 +125,7 @@ async function ensureSchema() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS orders (
       id            INT AUTO_INCREMENT PRIMARY KEY,
+      bill_no       VARCHAR(50)  NULL,
       customer_name VARCHAR(150) NOT NULL,
       customer_id   INT NULL,
       product_id    INT NULL,
@@ -137,6 +138,7 @@ async function ensureSchema() {
       tracked       TINYINT(1) NOT NULL DEFAULT 1,
       created_by    INT NULL,
       order_date    DATETIME NOT NULL,
+      INDEX idx_orders_bill_no (bill_no),
       FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
       FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
       FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
@@ -356,6 +358,24 @@ async function ensureMigrations() {
     }
   } catch (err) {
     console.warn('Migration warning (service_tasks.reminder_sent_at):', err.message);
+  }
+
+  // 11. Ensure bill_no exists in orders table
+  try {
+    const [billCols] = await pool.query(`SHOW COLUMNS FROM orders LIKE 'bill_no'`);
+    if (billCols.length === 0) {
+      console.log('Migrating: adding orders.bill_no ...');
+      await pool.query('ALTER TABLE orders ADD COLUMN bill_no VARCHAR(50) NULL AFTER id');
+      try {
+        await pool.query('ALTER TABLE orders ADD INDEX idx_orders_bill_no (bill_no)');
+      } catch (idxErr) {
+        // ignore if index already exists
+      }
+      await pool.query("UPDATE orders SET bill_no = CONCAT('BILL-', id) WHERE bill_no IS NULL OR bill_no = ''");
+      console.log('Migration complete: added bill_no to orders table.');
+    }
+  } catch (err) {
+    console.warn('Migration warning (orders.bill_no):', err.message);
   }
 }
 

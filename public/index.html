@@ -170,46 +170,92 @@
               <input type="hidden" id="customerName" value="">
               <input type="hidden" id="customerPhone" value="">
 
-              <div class="field-group">
-                <label for="productSelect">Product / பொருள்</label>
-                <select id="productSelect">
-                  <option value="">Select a product / பொருள் தேர்வு செய்யவும்</option>
-                </select>
+              <!-- PRODUCT SELECTION & ADD ITEM -->
+              <div class="product-entry-box">
+                <div class="product-entry-header">
+                  <span class="segment-label">Select product &amp; quantity / பொருள் மற்றும் அளவு</span>
+                </div>
+
+                <div class="field-group" style="margin-bottom:0.75rem;">
+                  <label for="productSelect">Product / பொருள் <span style="color:var(--clay)">*</span></label>
+                  <select id="productSelect">
+                    <option value="">Select a product / பொருள் தேர்வு செய்யவும்</option>
+                  </select>
+                </div>
+
+                <div class="field-grid">
+                  <div class="field-group">
+                    <label for="quantityInput">Quantity / அளவு <span style="color:var(--clay)">*</span></label>
+                    <input id="quantityInput" type="number" min="0" step="0.01" placeholder="0.00">
+                  </div>
+                  <div class="field-group">
+                    <label for="unitDisplay">Unit / அலகு</label>
+                    <input id="unitDisplay" type="text" value="-" readonly>
+                  </div>
+                </div>
+
+                <div class="field-grid">
+                  <div class="field-group">
+                    <label for="rateInput">Rate / விலை (&#8377;)</label>
+                    <input id="rateInput" type="number" min="0" step="0.01" placeholder="0.00">
+                  </div>
+                  <div class="field-group">
+                    <label>Rate status</label>
+                    <div id="rateStatus" class="status-pill">Default rate</div>
+                  </div>
+                </div>
+
+                <div class="add-item-action-row" style="margin-top:0.75rem;display:flex;gap:0.75rem;align-items:center;">
+                  <button type="button" class="btn btn-secondary" id="btnAddItem" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:0.45rem;font-weight:600;padding:0.65rem 1rem;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>+ Add Product to Bill / பில்லில் சேர்</span>
+                  </button>
+                  <div class="item-subtotal-tag" id="itemSubtotalBox" style="display:none;text-align:right;">
+                    <span style="font-size:0.72rem;color:var(--muted);display:block;">Item Total:</span>
+                    <strong id="itemSubtotalPreview" style="font-family:var(--mono-face);font-weight:600;color:var(--mill);font-size:0.98rem;">&#8377;0.00</strong>
+                  </div>
+                </div>
               </div>
 
-              <div class="field-grid">
-                <div class="field-group">
-                  <label for="quantityInput">Quantity / அளவு</label>
-                  <input id="quantityInput" type="number" min="0" step="0.01" placeholder="0.00">
+              <!-- BILL ITEMS LIST (Appears when 1+ products are added) -->
+              <div id="billItemsCard" class="bill-items-card" style="display:none;margin-top:1rem;">
+                <div class="bill-items-card-head">
+                  <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span class="bill-items-title">Bill Items / பில் பொருட்கள்</span>
+                    <span class="badge" id="billItemsBadge">0 items</span>
+                  </div>
+                  <button type="button" class="btn-clear-items" id="btnClearBillItems" title="Remove all items from bill">Clear all / நீக்கு</button>
                 </div>
-                <div class="field-group">
-                  <label for="unitDisplay">Unit / அலகு</label>
-                  <input id="unitDisplay" type="text" value="-" readonly>
-                </div>
-              </div>
-
-              <div class="field-grid">
-                <div class="field-group">
-                  <label for="rateInput">Rate / விலை</label>
-                  <input id="rateInput" type="number" min="0" step="0.01" placeholder="0.00">
-                </div>
-                <div class="field-group">
-                  <label>Rate status</label>
-                  <div id="rateStatus" class="status-pill">Default rate</div>
+                <div class="bill-items-table-wrap">
+                  <table class="bill-items-table">
+                    <thead>
+                      <tr>
+                        <th style="width:28px">#</th>
+                        <th>Product / பொருள்</th>
+                        <th style="text-align:right">Qty</th>
+                        <th style="text-align:right">Rate</th>
+                        <th style="text-align:right">Total</th>
+                        <th style="width:36px;text-align:center">Del</th>
+                      </tr>
+                    </thead>
+                    <tbody id="billItemsTableBody">
+                      <!-- dynamic rows -->
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
               <div class="summary-box">
-                <div class="summary-row">
-                  <span>Default rate</span>
-                  <strong id="defaultRateDisplay">&#8377;0.00</strong>
+                <div class="summary-row" id="summaryItemsCountRow">
+                  <span>Total products / பொருட்கள்</span>
+                  <strong id="summaryItemsCount">0 items</strong>
                 </div>
-                <div class="summary-row">
-                  <span>Current rate</span>
-                  <strong id="currentRateDisplay">&#8377;0.00</strong>
+                <div class="summary-row" id="summaryTotalQtyRow">
+                  <span>Total quantity / மொத்த அளவு</span>
+                  <strong id="summaryTotalQty">0.00 units</strong>
                 </div>
                 <div class="summary-row total">
-                  <span>Total / மொத்தம்</span>
+                  <span>Grand Total / மொத்தம்</span>
                   <strong id="totalDisplay">&#8377;0.00</strong>
                 </div>
               </div>
@@ -284,13 +330,27 @@
               </div>
               <div class="receipt-body">
                 <div class="receipt-row"><span>Date &amp; time</span><strong id="receiptDate">-</strong></div>
+                <div class="receipt-row" id="receiptBillNoRow" style="display:none"><span>Bill No</span><strong id="receiptBillNo">-</strong></div>
                 <div class="receipt-row"><span>Customer</span><strong id="receiptCustomer">-</strong></div>
                 <div class="receipt-row" id="receiptPhoneRow" style="display:none"><span>Phone</span><strong id="receiptPhone">-</strong></div>
-                <div class="receipt-row"><span>Product</span><strong id="receiptProduct">-</strong></div>
-                <div class="receipt-row"><span>Quantity</span><strong id="receiptQuantity">-</strong></div>
-                <div class="receipt-row"><span>Rate</span><strong id="receiptRate">-</strong></div>
-                <div class="receipt-row"><span>Rate type</span><strong id="receiptRateType">-</strong></div>
-                <div class="receipt-row receipt-total"><span>Total / மொத்தம்</span><strong id="receiptTotal">-</strong></div>
+
+                <!-- ITEM LIST TABLE ON RECEIPT -->
+                <div class="receipt-items-container" id="receiptItemsContainer">
+                  <div class="receipt-items-header">
+                    <span class="r-col-item">Item / பொருள்</span>
+                    <span class="r-col-qty">Qty</span>
+                    <span class="r-col-rate">Rate</span>
+                    <span class="r-col-amt">Amt (&#8377;)</span>
+                  </div>
+                  <div class="receipt-items-list" id="receiptItemsList">
+                    <div class="receipt-empty-item">No products added yet</div>
+                  </div>
+                </div>
+
+                <div class="receipt-row receipt-meta-row" id="receiptItemsCountRow" style="display:none;">
+                  <span>Total items</span><strong id="receiptItemsCount">0 items</strong>
+                </div>
+                <div class="receipt-row receipt-total"><span>Total / மொத்தம்</span><strong id="receiptTotal">&#8377;0.00</strong></div>
               </div>
               <p class="receipt-note"><span class="ta">நன்றி</span> &middot; Thank you</p>
             </div>

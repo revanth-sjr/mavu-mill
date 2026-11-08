@@ -23,6 +23,16 @@ function fmtDate(d) {
 function fmtDay(d) {
   return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>"']/g, m => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[m]));
+}
 
 // ── Period filter ─────────────────────────────────────────────
 function filterByPeriod(orders, period) {
@@ -110,12 +120,13 @@ function renderStats(filtered) {
   const labels = { today:'today', month:'this month', year:'this year', all:'all time' };
   const earnings = filtered.reduce((s,o) => s+o.total, 0);
   const qty      = filtered.reduce((s,o) => s+o.quantity, 0);
+  const billCount = new Set(filtered.map(o => o.billNo || ('ORDER-' + o.id))).size;
 
   document.getElementById('statEarnings').textContent  = fmtShort(earnings);
-  document.getElementById('statOrders').textContent    = filtered.length;
+  document.getElementById('statOrders').textContent    = billCount;
   document.getElementById('statQty').textContent       = qty.toFixed(2);
   document.getElementById('statEarningSub').textContent = labels[activePeriod] || '';
-  document.getElementById('statOrdersSub').textContent  = `orders ${labels[activePeriod] || ''}`;
+  document.getElementById('statOrdersSub').textContent  = `${billCount} bill${billCount === 1 ? '' : 's'} (${filtered.length} item${filtered.length === 1 ? '' : 's'})`;
   document.getElementById('statQtySub').textContent     = `units ${labels[activePeriod] || ''}`;
 }
 
@@ -149,19 +160,61 @@ function renderTopItems(filtered) {
 // ── Render recent orders ──────────────────────────────────────
 function renderRecentOrders(filtered) {
   const el = document.getElementById('recentOrders');
-  const sorted = sortOrders(filtered, activeSort).slice(0, 8);
+
+  // Group by billNo so multi-item bills display as a clean unified bill
+  const billMap = new Map();
+  filtered.forEach(o => {
+    const key = o.billNo || `ORDER-${o.id}`;
+    if (!billMap.has(key)) {
+      billMap.set(key, {
+        id: o.id,
+        billNo: o.billNo || null,
+        name: o.name,
+        phone: o.phone,
+        tracked: o.tracked,
+        date: o.date,
+        items: [],
+        total: 0,
+        totalQty: 0
+      });
+    }
+    const b = billMap.get(key);
+    b.items.push(o);
+    b.total += o.total;
+    b.totalQty += o.quantity;
+  });
+
+  const bills = Array.from(billMap.values());
+  if (activeSort === 'recent')       bills.sort((a,b) => new Date(b.date) - new Date(a.date));
+  else if (activeSort === 'oldest')  bills.sort((a,b) => new Date(a.date) - new Date(b.date));
+  else if (activeSort === 'highest_qty')   bills.sort((a,b) => b.totalQty - a.totalQty);
+  else if (activeSort === 'lowest_qty')    bills.sort((a,b) => a.totalQty - b.totalQty);
+  else if (activeSort === 'highest_total') bills.sort((a,b) => b.total - a.total);
+
+  const sorted = bills.slice(0, 8);
   if (!sorted.length) { el.innerHTML = emptyState('No orders for this period.'); return; }
-  el.innerHTML = sorted.map(o => `
+
+  el.innerHTML = sorted.map(b => {
+    const summaryText = b.items.length === 1
+      ? `${b.items[0].product} · ${b.items[0].quantity.toFixed(2)} ${b.items[0].unit} · ${fmt(b.items[0].rate)}/${b.items[0].unit}`
+      : `${b.items.length} items: ${b.items.map(it => `${it.product} (${it.quantity} ${it.unit})`).join(', ')}`;
+    const billTag = b.billNo ? `<span style="margin-left:0.4rem;font-size:0.72rem;padding:0.12rem 0.38rem;border-radius:4px;background:var(--wash);border:1px solid var(--wash-deep);font-family:var(--mono-face);color:var(--forest);font-weight:600;">${b.billNo}</span>` : '';
+
+    return `
     <div class="order-item">
       <div class="order-top">
-        <span class="order-name">${o.name}${o.tracked === false ? ' <em style="color:var(--muted);font-size:0.75rem;font-weight:400">(untracked)</em>' : ''}</span>
-        <span class="order-total">${fmt(o.total)}</span>
+        <span class="order-name">
+          ${escapeHtml(b.name)}${billTag}
+          ${b.tracked === false ? ' <em style="color:var(--muted);font-size:0.75rem;font-weight:400">(untracked)</em>' : ''}
+        </span>
+        <span class="order-total">${fmt(b.total)}</span>
       </div>
       <div class="order-bottom">
-        <span>${o.product} · ${o.quantity.toFixed(2)} ${o.unit} · ${fmt(o.rate)}/${o.unit}</span>
-        <span>${fmtDate(o.date)}</span>
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%;" title="${escapeHtml(summaryText)}">${escapeHtml(summaryText)}</span>
+        <span>${fmtDate(b.date)}</span>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // ── Render trend ──────────────────────────────────────────────
@@ -486,6 +539,7 @@ function downloadOrdersCsv(ordersToExport, filenamePrefix = 'sakthi_mill_records
 
   const sorted = sortOrders(list, activeSort);
   const headers = [
+    'Bill No',
     'Order ID',
     'Date & Time',
     'Date',
@@ -512,6 +566,7 @@ function downloadOrdersCsv(ordersToExport, filenamePrefix = 'sakthi_mill_records
     totalAmount += Number(o.total) || 0;
 
     return [
+      escapeCsv(o.billNo || ('BILL-' + o.id)),
       escapeCsv(o.id || ''),
       escapeCsv(fmtDate(o.date)),
       escapeCsv(dateStr),
@@ -530,7 +585,8 @@ function downloadOrdersCsv(ordersToExport, filenamePrefix = 'sakthi_mill_records
 
   const summaryRow = [
     escapeCsv('TOTAL'),
-    escapeCsv(`${sorted.length} orders`),
+    '""',
+    escapeCsv(`${sorted.length} items`),
     '""',
     '""',
     '""',
@@ -617,7 +673,7 @@ function printPeriodReport() {
     <tr>
       <td style="color:#666">${idx + 1}</td>
       <td>${fmtDate(o.date)}</td>
-      <td><strong>${o.name}</strong>${o.phone ? '<br><small style="color:#666">' + o.phone + '</small>' : ''}</td>
+      <td><strong>${o.name}</strong>${o.billNo ? ' <small style="color:#16704A;font-weight:600">[' + o.billNo + ']</small>' : ''}${o.phone ? '<br><small style="color:#666">' + o.phone + '</small>' : ''}</td>
       <td>${o.product}</td>
       <td style="text-align:right">${Number(o.quantity).toFixed(2)} ${o.unit}</td>
       <td style="text-align:right">₹${Number(o.rate).toFixed(2)}</td>

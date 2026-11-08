@@ -733,6 +733,208 @@ select option {
   color: var(--sprout);
 }
 
+/* ── Multi-product Bill Items & Entry ── */
+.product-entry-box {
+  background: var(--page);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.9rem;
+}
+.product-entry-header {
+  margin-bottom: 0.75rem;
+}
+.item-subtotal-tag {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--r);
+}
+
+.bill-items-card {
+  background: var(--paper);
+  border: 1.5px solid var(--wash-deep);
+  border-radius: var(--r);
+  overflow: hidden;
+  box-shadow: var(--sh-sm);
+  margin-bottom: 1rem;
+}
+.bill-items-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.9rem;
+  background: var(--wash);
+  border-bottom: 1px solid var(--wash-deep);
+}
+.bill-items-title {
+  font-weight: 700;
+  font-size: 0.86rem;
+  color: var(--forest);
+}
+.btn-clear-items {
+  background: none;
+  border: none;
+  color: var(--clay);
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+.btn-clear-items:hover {
+  background: var(--clay-wash);
+}
+.bill-items-table-wrap {
+  overflow-x: auto;
+}
+.bill-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.bill-items-table th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--page);
+  border-bottom: 1px solid var(--line);
+  text-transform: uppercase;
+}
+.bill-items-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--ink);
+  vertical-align: middle;
+}
+.bill-items-table tr:last-child td {
+  border-bottom: none;
+}
+.bill-items-table tr:hover td {
+  background: var(--wash);
+}
+.bill-item-num {
+  font-family: var(--mono-face);
+  color: var(--faint);
+  font-size: 0.76rem;
+}
+.bill-item-name {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.bill-item-cat {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+.bill-item-cat.sales {
+  background: var(--wash);
+  color: var(--mill);
+  border: 1px solid var(--wash-deep);
+}
+.bill-item-cat.service {
+  background: var(--amber-wash);
+  color: var(--amber);
+  border: 1px solid rgba(169,118,27,0.25);
+}
+.bill-item-qty, .bill-item-rate, .bill-item-total {
+  font-family: var(--mono-face);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.bill-item-total {
+  font-weight: 600;
+  color: var(--mill);
+}
+.btn-remove-item {
+  background: none;
+  border: none;
+  color: var(--clay);
+  cursor: pointer;
+  padding: 0.25rem 0.4rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.75;
+  transition: opacity 0.15s, background 0.15s;
+}
+.btn-remove-item:hover {
+  opacity: 1;
+  background: var(--clay-wash);
+}
+
+/* ── Receipt itemized section ── */
+.receipt-items-container {
+  margin: 0.65rem 0 0.4rem;
+  border-top: 1.5px dashed var(--line);
+  border-bottom: 1.5px dashed var(--line);
+  padding: 0.45rem 0;
+}
+.receipt-items-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.15fr;
+  gap: 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--line-soft);
+}
+.receipt-items-list {
+  display: flex;
+  flex-direction: column;
+}
+.receipt-item-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.15fr;
+  gap: 0.35rem;
+  align-items: center;
+  padding: 0.35rem 0;
+  font-size: 0.8rem;
+  border-bottom: 1px dotted var(--line-soft);
+}
+.receipt-item-row:last-child {
+  border-bottom: none;
+}
+.receipt-item-name {
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.receipt-item-qty, .receipt-item-rate, .receipt-item-amt {
+  font-family: var(--mono-face);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  font-size: 0.78rem;
+}
+.receipt-item-amt {
+  font-weight: 600;
+  color: var(--forest);
+}
+.receipt-empty-item {
+  padding: 0.8rem 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-style: italic;
+}
+.receipt-meta-row {
+  border-bottom: none;
+  font-size: 0.75rem;
+  color: var(--muted);
+  padding-top: 0.2rem;
+}
+
 
 /* ── SIGNATURE: the receipt as a physical slip ───────────────── */
 .receipt-card { padding: 1.25rem; position: sticky; top: 5.2rem; }
@@ -2336,6 +2538,17 @@ select option {
     padding: 0;
   }
   .receipt-panel::after { display: none; }
+  .receipt-items-container {
+    border-top: 1px dashed #333 !important;
+    border-bottom: 1px dashed #333 !important;
+  }
+  .receipt-items-header {
+    color: #111 !important;
+    border-bottom: 1px solid #333 !important;
+  }
+  .receipt-item-row {
+    border-bottom: 1px dotted #ccc !important;
+  }
 }
 
 /* Mill Code Display Card & Staff Join Steps */
